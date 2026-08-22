@@ -62,6 +62,32 @@ using namespace std;
     #define _JTFRAME_SIM_DIPS 0xffffffff
 #endif
 
+// Vampire Saved (VS fork): scripted RAM dumps out of the simulated SDRAM.
+// Enabled ONLY when _JTFRAME_SIM_WRAMDUMP is defined (jtsim -d
+// JTFRAME_SIM_WRAMDUMP=<first frame>); absent, every line below compiles out
+// and the harness is byte-for-byte upstream's. The block to dump is described
+// entirely by macros so the hook stays core-agnostic: the caller supplies the
+// bank, the byte offset inside it, the length and the LOGICAL cpu address
+// that names the file. See docs/platform/mister.md.
+#ifdef _JTFRAME_SIM_WRAMDUMP
+    #include <sys/stat.h>
+    #ifndef _JTFRAME_SIM_WRAMDUMP_END
+        #define _JTFRAME_SIM_WRAMDUMP_END _JTFRAME_SIM_WRAMDUMP
+    #endif
+    #ifndef _JTFRAME_SIM_WRAMDUMP_BANK
+        #define _JTFRAME_SIM_WRAMDUMP_BANK 0
+    #endif
+    #ifndef _JTFRAME_SIM_WRAMDUMP_OFF
+        #define _JTFRAME_SIM_WRAMDUMP_OFF 0
+    #endif
+    #ifndef _JTFRAME_SIM_WRAMDUMP_LEN
+        #define _JTFRAME_SIM_WRAMDUMP_LEN 0x10000
+    #endif
+    #ifndef _JTFRAME_SIM_WRAMDUMP_ADDR
+        #define _JTFRAME_SIM_WRAMDUMP_ADDR 0
+    #endif
+#endif
+
 #define ANSI_COLOR_RED     "\x1b[31m"
 #define ANSI_COLOR_GREEN   "\x1b[32m"
 #define ANSI_COLOR_YELLOW  "\x1b[33m"
@@ -102,6 +128,9 @@ public:
     ~SDRAM();
     void update();
     void dump();
+#ifdef _JTFRAME_SIM_WRAMDUMP
+    void dump_range( int bank, int offset, int len, int frame, int logical );
+#endif
 };
 
 class SimInputs {
@@ -498,6 +527,35 @@ void SDRAM::dump() {
     delete[] aux;
 }
 
+#ifdef _JTFRAME_SIM_WRAMDUMP
+// Dump one byte range of one SDRAM bank to wram/dump_<frame>_<logical>.bin.
+// The byte swap is the same one SDRAM::dump() applies, so the file comes out
+// in the CPU's own byte order (big endian on 68000 cores) and can be compared
+// directly against a dump taken from another implementation.
+void SDRAM::dump_range( int bank, int offset, int len, int frame, int logical ) {
+    if( bank<0 || bank>3 || offset<0 || len<=0 || (offset&1)!=0 || (len&1)!=0
+        || offset+len>BANK_LEN ) {
+        fprintf(stderr,"ERROR: (test.cpp) bad WRAMDUMP range: bank %d offset %X len %X\n",
+            bank, offset, len );
+        return;
+    }
+    static bool made_dir=false;
+    if( !made_dir ) { mkdir("wram",0777); made_dir=true; }
+    char fname[64];
+    snprintf(fname,64,"wram/dump_%d_%06x.bin", frame, logical );
+    ofstream fout(fname,ios_base::binary);
+    if( !fout.good() ) {
+        fprintf(stderr,"ERROR: (test.cpp) creating %s\n", fname );
+        return;
+    }
+    char *aux=new char[len];
+    for( int j=0;j<len;j++) aux[j] = banks[bank][(offset+j)^1];
+    fout.write(aux,len);
+    if( !fout.good() ) fprintf(stderr,"ERROR: (test.cpp) saving to %s\n", fname );
+    delete[] aux;
+}
+#endif
+
 void SDRAM::change_burst() {
     int mode = dut.SDRAM_A;
     burst_len = 1 << (mode&3);
@@ -817,6 +875,12 @@ void JTSim::clock(int n) {
             frame_cnt++;
 #ifdef _JTFRAME_SIM_IODUMP
             if( frame_cnt==_JTFRAME_SIM_IODUMP ) dwn.iodump_start();
+#endif
+#ifdef _JTFRAME_SIM_WRAMDUMP
+            if( frame_cnt>=_JTFRAME_SIM_WRAMDUMP && frame_cnt<=_JTFRAME_SIM_WRAMDUMP_END )
+                sdram.dump_range( _JTFRAME_SIM_WRAMDUMP_BANK, _JTFRAME_SIM_WRAMDUMP_OFF,
+                                  _JTFRAME_SIM_WRAMDUMP_LEN, frame_cnt,
+                                  _JTFRAME_SIM_WRAMDUMP_ADDR );
 #endif
             if( frame_cnt == _DUMP_START && !dump_ok ) {
                 dump_ok = 1;
