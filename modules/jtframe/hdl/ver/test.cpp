@@ -602,12 +602,34 @@ void SDRAM::update() {
             change_burst();
         }
         if( !dut.SDRAM_nRAS && dut.SDRAM_nCAS && dut.SDRAM_nWE ) { // Row address - Activate command
-            ba_addr[ cur_ba ] = dut.SDRAM_A << 9; // 32MB module
+            // row = addr[21:9] on both tiers -- jtframe_sdram64_bank.v:127
+            //   addr_row = AW==22 ? addr[AW-1:AW-ROW] : addr[AW-2:AW-1-ROW]
+            // with ROW=13, so AW=22 -> addr[21:9] and AW=23 -> addr[21:9].
+            ba_addr[ cur_ba ] = dut.SDRAM_A << 9;
             ba_addr[ cur_ba ] &= 0x3fffff;
         }
         if( dut.SDRAM_nRAS && !dut.SDRAM_nCAS ) {
             ba_addr[ cur_ba ] &= ~0x1ff;
             ba_addr[ cur_ba ] |= (dut.SDRAM_A & 0x1ff);
+#ifdef _JTFRAME_SDRAM_LARGE
+            // 64MB tier: the TOP address bit rides on sdram_a[9], and it is
+            // NOT a column bit. jtframe_sdram64_bank.v:75-76 sets COW=10 for
+            // AW=23 and :219 drives
+            //     sdram_a[10:0] = { precharge_flag, addr[AW-1], addr[8:0] }
+            // so the word address is  row=addr[21:9] | col={addr[22],addr[8:0]}
+            // -- addr[22] is column bit 9, NOT addr[9]. Rebuilding only the
+            // low 9 bits (the line above, which is all upstream does) drops
+            // addr[22] and ALIASES the upper 8MB of every bank onto the lower
+            // 8MB, silently, at a tier where each bank is 16MB and BANK_LEN
+            // above already allocates all 16MB.
+            //
+            // LARGE-ONLY BY CONSTRUCTION: at AW=22 the same :219 puts
+            // addr[AW-1] = addr[21] on sdram_a[9], which is already part of
+            // addr_row, and COW=9 makes it a don't-care -- so a 32MB-module
+            // core must keep ignoring it and is byte-for-byte unaffected here.
+            ba_addr[ cur_ba ] &= ~0x400000;
+            ba_addr[ cur_ba ] |= (dut.SDRAM_A & 0x200) << 13; // 0x200<<13 == 1<<22
+#endif
             if( dut.SDRAM_nWE ) { // enque read
                 rd_st[ cur_ba ] = burst_len+1;
             } else {
@@ -638,7 +660,11 @@ void SDRAM::update() {
                 //cout << "Read " << std::hex << data_read << " from bank " << k << '\n';
                 dut.SDRAM_DQ = data_read;
                 if( burst_len>1 ) {
-                    // Increase the column within the burst
+                    // Increase the column within the burst. The 9 LOW bits
+                    // only, on both tiers: SDRAM burst addressing wraps inside
+                    // the burst-length-aligned block, so it never carries into
+                    // column bit 9 -- which on the 64MB tier is addr[22], the
+                    // bit reconstructed above and not part of the counter.
                     auto col = ba_addr[k]&0x1ff;
                     auto col_inc = (col+1) & ~burst_mask;
                     col &= burst_mask;
