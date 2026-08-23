@@ -32,6 +32,8 @@
 // fork
 #include <sys/types.h>
 #include <unistd.h>
+// Vampire Saved (VS fork): waitpid, to reap the frame writers below.
+#include <sys/wait.h>
 
 #ifdef _DUMP
     #include "verilated_vcd_c.h"
@@ -828,6 +830,14 @@ JTSim::JTSim( UUT& g, int argc, char *argv[]) :
 #endif
     game.dipsw=_JTFRAME_SIM_DIPS;
     fprintf(stderr,"DIP sw set to %X\n",game.dipsw);
+    // Vampire Saved (VS fork): the frame-output configuration is part of the
+    // run's identity -- a gate that freezes a measurement must be able to
+    // assert the configuration it was frozen under.
+#ifdef _JTFRAME_SIM_NOVIDEO
+    fputs("frame output DISABLED (JTFRAME_SIM_NOVIDEO)\n",stderr);
+#else
+    fputs("frame output ENABLED (one fork per changed frame)\n",stderr);
+#endif
     reset(0);
     game.sdram_rst = 0; // the initial non-reset time should be short or JTKCPU
     clock(24);          // will signal a bus error
@@ -985,6 +995,15 @@ void JTSim::video_dump() {
 #ifndef _JTFRAME_OSD_FLIP
                 CCW ^= game.dip_flip&1;
 #endif
+                // Vampire Saved (VS fork): the whole per-frame image writer
+                // is skipped when _JTFRAME_SIM_NOVIDEO is defined (jtsim -d
+                // JTFRAME_SIM_NOVIDEO=1), so a run that only wants simulated
+                // STATE forks no children and spawns no ImageMagick at all.
+                // That is what makes a state oracle independent of what the
+                // core happens to be putting on screen -- see
+                // docs/platform/mister.md. Absent the macro this is
+                // upstream's code, byte for byte, plus the reap below.
+#ifndef _JTFRAME_SIM_NOVIDEO
                 if( dump.diff() ) {
                     // converts image to jpg in a different fork
                     // I suppose a thread would be faster...
@@ -1006,6 +1025,13 @@ void JTSim::video_dump() {
                         exit(0);
                     }
                 }
+                // ...and REAP them. Upstream never wait()s, so a long run
+                // leaves one zombie per changed frame; at RLIMIT_NPROC
+                // (2666 on a stock macOS user) fork() then starts failing and
+                // frames go missing with no diagnostic. WNOHANG never blocks
+                // the simulation.
+                while( waitpid(-1,nullptr,WNOHANG) > 0 ) ;
+#endif
             } else {
                 cnth[0]++;
                 if( game.LVBL!=0 ) cnth[1]++;
