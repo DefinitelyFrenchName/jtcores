@@ -147709,6 +147709,73 @@
 		</port>
 		<driver status="good" emulation="good" savestate="supported"/>
 	</machine>
+	<machine name="vsavjw" sourcefile="capcom/cps2w.cpp" cloneof="vsav" romof="vsav">
+		<description>Vampire Savior: The Lord of Vampire (Japan 970519, CPS-2 WIDE v1)</description>
+		<year>1997</year>
+		<manufacturer>Capcom</manufacturer>
+		<rom name="vm3j.03d" size="524288" crc="100b6ffb" sha1="737827974b476c983cd1d0fc14679c4eea09b3b7" region="maincpu" offset="0"/>
+		<rom name="vm3j.04d" size="524288" crc="20c40154" sha1="890f0edd9dd9d2613b35a210868dcebb512df924" region="maincpu" offset="80000"/>
+		<rom name="vm3j.05a" size="524288" crc="95ce88d5" sha1="ba5e64c2551d97a71d2f4d7a78663aede4b722e8" region="maincpu" offset="100000"/>
+		<rom name="vm3j.06b" size="524288" crc="2c4297e0" sha1="3a7103456ba3937f63c28dd42020cac1955b5741" region="maincpu" offset="180000"/>
+		<rom name="vm3j.07b" size="524288" crc="0a4d6b7e" sha1="416c06fa18b32c529c6eb46e3be15b5e53e54a2a" region="maincpu" offset="200000"/>
+		<rom name="vm3j.08a" size="524288" crc="5773e5c9" sha1="551afc5d921f9ef1fe928ca83d072b6a6105ab0e" region="maincpu" offset="280000"/>
+		<rom name="vm3j.09b" size="524288" crc="d064f8b9" sha1="09f77f7b466c147a5d894a4ec3b40bd068dfab26" region="maincpu" offset="300000"/>
+		<rom name="vm3j.10b" size="524288" crc="dffa4d2d" sha1="ee4901ef42bc9b2e2c74484b5d41a3c3ff9cca47" region="maincpu" offset="380000"/>
+		<rom name="vsw.41" size="524288" crc="8e54c74a" sha1="0bf5f8b07d63c73e2b88d324e1f5217ddbd9ba04" region="maincpu" offset="400000"/>
+		<rom name="vsw.42" size="524288" crc="5989d063" sha1="2d3b8d32a3608ef9b5c28b13d36945b1df91cf6a" region="maincpu" offset="480000"/>
+		<rom name="vsw.43" size="524288" crc="504bf849" sha1="13a184ec9e176371808938015111f8918cb4df7d" region="maincpu" offset="500000"/>
+		<rom name="vsw.44" size="524288" crc="ceb1784e" sha1="739ad1d33c279d69588cfe8e184ce49ab150684c" region="maincpu" offset="580000"/>
+		<rom name="vm3.13m" merge="vm3.13m" size="4194304" crc="dd2551ff" sha1="969485a0d225d15e5d04b19c9fd12e609b56f712" region="gfx" offset="0"/>
+		<rom name="vm3.15m" merge="vm3.15m" size="4194304" crc="bc1b3db8" sha1="3b2138eaf7866ae6e14cc52b2d63a093e249143a" region="gfx" offset="2"/>
+		<rom name="vm3.17m" merge="vm3.17m" size="4194304" crc="c9727c5c" sha1="93171644bfa7219a8197937a54ecb1a3a8be364d" region="gfx" offset="4"/>
+		<rom name="vm3.19m" merge="vm3.19m" size="4194304" crc="8bf92753" sha1="8d4b6106831dbf3096898a302c878ba09148053c" region="gfx" offset="6"/>
+		<rom name="vm3.14m" merge="vm3.14m" size="4194304" crc="c1a28e6c" sha1="012803af33174c0602649d2a2d84f6ee79f54ad2" region="gfx" offset="1000000"/>
+		<rom name="vm3.16m" merge="vm3.16m" size="4194304" crc="194a7304" sha1="a19a9a6fb829953b054dc5c3b0dc017f60d37928" region="gfx" offset="1000002"/>
+		<rom name="vm3.18m" merge="vm3.18m" size="4194304" crc="df9a9f47" sha1="ce29ff00cf4b6fdd9b3b1ed87823534f1d364eab" region="gfx" offset="1000004"/>
+		<rom name="vm3.20m" merge="vm3.20m" size="4194304" crc="c22fc3d9" sha1="df7538c05b03a4ad94d369f8083799979e6fac42" region="gfx" offset="1000006"/>
+		<rom name="vsw.31m" size="4194304" crc="7ce26495" sha1="8ca73214181d3b1c5c294fe5cdf4b6db43abc310" region="gfx" offset="2000000"/>
+		<rom name="vsw.33m" size="4194304" crc="34074943" sha1="a8762ab8d5050c8d6d3ec0f7f585fa671adf1d9c" region="gfx" offset="2000002"/>
+		<rom name="vsw.35m" size="4194304" crc="5ef54185" sha1="af04b0c7434d827ee89a1d9cd1263e660871eb41" region="gfx" offset="2000004"/>
+		<rom name="vsw.37m" size="4194304" crc="e430c64e" sha1="876476c379c394ef25a239880c8bc27d84f3eed3" region="gfx" offset="2000006"/>
+		<rom name="vsw.z01" size="131072" crc="153600b9" sha1="255e3523b5fc49b63d420c04547a69784eb5171f" region="audiocpu" offset="0"/>
+		<rom name="vsw.z02" size="131072" crc="26b6ecc5" sha1="9f113542d7bc75de01d62743af489e8ccc0559d8" region="audiocpu" offset="28000"/>
+		<rom name="vm3.11m" merge="vm3.11m" size="4194304" crc="e80e956e" sha1="74181fca4b764fb3c56ceef2cb4c6fd6c18ec4b6" region="qsound" offset="0"/>
+		<rom name="vm3.12m" merge="vm3.12m" size="4194304" crc="9cd71557" sha1="7059db25698a0b286314c5961c618f6d2e6f24a1" region="qsound" offset="400000"/>
+		<rom name="vsw.21m" size="4194304" crc="f6c937e1" sha1="6ce098a5ef0d4e03e47ed5b3422fb99f0992152d" region="qsoundw" offset="0"/>
+		<rom name="vsavj.key" size="20" crc="36d28ab8" sha1="7de11dbe4a7ea0e8b68ab332f80e32cb6c1bf48e" region="key" offset="0"/>
+		<device_ref name="m68000"/>
+		<device_ref name="timer"/>
+		<device_ref name="z80"/>
+		<device_ref name="93c46_16"/>
+		<device_ref name="screen"/>
+		<device_ref name="gfxdecode"/>
+		<device_ref name="palette"/>
+		<device_ref name="speaker"/>
+		<device_ref name="speaker"/>
+		<device_ref name="qsound_hle"/>
+		<chip type="cpu" tag="maincpu" name="Motorola MC68000" clock="16000000"/>
+		<chip type="cpu" tag="audiocpu" name="Zilog Z80" clock="8000000"/>
+		<chip type="audio" tag="lspeaker" name="Speaker"/>
+		<chip type="audio" tag="rspeaker" name="Speaker"/>
+		<chip type="audio" tag="qsound" name="QSound (HLE)" clock="60000000"/>
+		<display tag="screen" type="raster" rotate="0" width="384" height="224" refresh="59.637405" pixclock="8000000" htotal="512" hbend="64" hbstart="448" vtotal="262" vbend="16" vbstart="240" />
+		<sound channels="2"/>
+		<input players="2" coins="2" service="yes">
+			<control type="joy" player="1" buttons="6" ways="8"/>
+			<control type="joy" player="2" buttons="6" ways="8"/>
+		</input>
+		<port tag=":DIGITALVOL">
+		</port>
+		<port tag=":EEPROMOUT">
+		</port>
+		<port tag=":IN0">
+		</port>
+		<port tag=":IN1">
+		</port>
+		<port tag=":IN2">
+		</port>
+		<driver status="good" emulation="good" savestate="supported"/>
+	</machine>
 	<machine name="vsavu" sourcefile="capcom/cps2.cpp" cloneof="vsav" romof="vsav">
 		<description>Vampire Savior: The Lord of Vampire (USA 970519)</description>
 		<year>1997</year>
