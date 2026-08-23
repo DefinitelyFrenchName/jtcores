@@ -453,6 +453,32 @@ class JTSim {
         }
     }
     void reset(int r);
+    // Keep the MODEL's clock in step with ours. simtime is a private counter;
+    // VerilatedContext::time() is what $time reads and what the --timing delay
+    // scheduler compares its deadlines against, and upstream never advances
+    // it -- so under Verilator every `#` delay in the design has a deadline
+    // that never arrives. That is why `jtsim -verilator -stats` reports
+    // nothing: the reporter in jtframe_sdram_stats_sim.v is an
+    // `initial forever #16_666_667`.
+    //
+    // A delay deadline lands wherever the design put it, NOT on our
+    // half-period grid, so stepping blindly by semi_period jumps over it and
+    // Verilator aborts with "Encountered process that should've been resumed
+    // at an earlier simulation time. Missed a time slot?" (measured). Land on
+    // each pending slot on the way. eval() at an intermediate time changes no
+    // input, so it creates no clock edge -- it only lets the delayed process
+    // resume. semi_period is in ps and the sim is built 1ns/1ps, so the
+    // arithmetic is exact; without --timing eventsPending() is always false
+    // and this costs one predictable branch per half cycle.
+    void advance_time() {
+        vluint64_t target = game.contextp()->time() + semi_period;
+        int guard = 1000; // a `#0` re-arming forever must not hang the sim
+        while( game.eventsPending() && game.nextTimeSlot() <= target && guard-- ) {
+            game.contextp()->time( game.nextTimeSlot() );
+            game.eval();
+        }
+        game.contextp()->time( target );
+    }
 public:
     int finish_time, finish_frame, totalh, totalw, activeh, activew;
     bool done() {
@@ -879,6 +905,7 @@ void JTSim::clock(int n) {
 #endif
         last_dwnd = cur_dwn;
         simtime += semi_period;
+        advance_time();
 #ifdef _DUMP
         if( tracer && dump_ok ) tracer->dump(simtime);
 #endif
@@ -890,6 +917,7 @@ void JTSim::clock(int n) {
         if( game.contextp()->gotFinish() ) return;
         sdram.update();
         simtime += semi_period;
+        advance_time();
         ticks++;
 
 #ifdef _DUMP
