@@ -52,7 +52,9 @@ reg [12:0] last_row0, last_row1, last_row2, last_row3;
 
 wire [31:0] count0, count1, count2, count3,
             samerow0, samerow1, samerow2, samerow3,
-            longest0, longest1, longest2, longest3;
+            longest0, longest1, longest2, longest3,
+            rdcnt0, rdcnt1, rdcnt2, rdcnt3,
+            wrcnt0, wrcnt1, wrcnt2, wrcnt3;
 
 assign cmd = {sdram_ncs, sdram_nras, sdram_ncas, sdram_nwe };
 
@@ -64,7 +66,9 @@ jtframe_sdram_stats_bank #(0) u_bank0(
     .cmd        ( cmd       ),
     .count      ( count0    ),
     .longest    ( longest0  ),
-    .samerow    ( samerow0  )
+    .samerow    ( samerow0  ),
+    .rdcnt      ( rdcnt0    ),
+    .wrcnt      ( wrcnt0    )
 );
 
 jtframe_sdram_stats_bank #(1) u_bank1(
@@ -75,7 +79,9 @@ jtframe_sdram_stats_bank #(1) u_bank1(
     .cmd        ( cmd       ),
     .count      ( count1    ),
     .longest    ( longest1  ),
-    .samerow    ( samerow1  )
+    .samerow    ( samerow1  ),
+    .rdcnt      ( rdcnt1    ),
+    .wrcnt      ( wrcnt1    )
 );
 
 jtframe_sdram_stats_bank #(2) u_bank2(
@@ -86,7 +92,9 @@ jtframe_sdram_stats_bank #(2) u_bank2(
     .cmd        ( cmd       ),
     .count      ( count2    ),
     .longest    ( longest2  ),
-    .samerow    ( samerow2  )
+    .samerow    ( samerow2  ),
+    .rdcnt      ( rdcnt2    ),
+    .wrcnt      ( wrcnt2    )
 );
 
 jtframe_sdram_stats_bank #(3) u_bank3(
@@ -97,7 +105,9 @@ jtframe_sdram_stats_bank #(3) u_bank3(
     .cmd        ( cmd       ),
     .count      ( count3    ),
     .longest    ( longest3  ),
-    .samerow    ( samerow3  )
+    .samerow    ( samerow3  ),
+    .rdcnt      ( rdcnt3    ),
+    .wrcnt      ( wrcnt3    )
 );
 
 integer last_cnt, last0, last1, last2, last3, new_cnt, delta;
@@ -123,6 +133,16 @@ initial begin
             (samerow1*100)/count1, longest1,
             (samerow2*100)/count2, longest2,
             (samerow3*100)/count3, longest3 );
+        // The two lines above are CUMULATIVE-and-rounded: the kiB/s figures
+        // are truncated deltas and the same-row figures are running integer
+        // percentages, so a log of them cannot be differenced back into what
+        // one PHASE of a run did. Machine-readable raw counters, same
+        // interval, so it can:
+        $display("SDRAM_STATS_RAW t=%0t ba0=%0d,%0d,%0d,%0d,%0d ba1=%0d,%0d,%0d,%0d,%0d ba2=%0d,%0d,%0d,%0d,%0d ba3=%0d,%0d,%0d,%0d,%0d",
+            $time, count0, samerow0, longest0, rdcnt0, wrcnt0,
+                   count1, samerow1, longest1, rdcnt1, wrcnt1,
+                   count2, samerow2, longest2, rdcnt2, wrcnt2,
+                   count3, samerow3, longest3, rdcnt3, wrcnt3 );
         last_cnt = new_cnt;
         last0 = count0;
         last1 = count1;
@@ -141,7 +161,16 @@ module jtframe_sdram_stats_bank(
     input  [ 3:0]       cmd,
     output     integer  count,
     output     integer  longest,
-    output     integer  samerow
+    output     integer  samerow,
+    // ACTIVE counts alone cannot be read as traffic: only bank 0 sets
+    // JTFRAME_BA0_AUTOPRECH, so on banks 1-3 jtframe_sdram64_bank.v:170
+    // (`row_match = match && actd && !AUTOPRECH[0]`) skips both the PRECHARGE
+    // and the ACTIVE when the request hits the open row. On those banks
+    // `count` is therefore the row MISS count, and the number of ACCESSES --
+    // the denominator of every rate and of the row hit rate itself -- is only
+    // visible in the READ/WRITE commands.
+    output     integer  rdcnt,
+    output     integer  wrcnt
 );
 
 parameter BA=0;
@@ -150,6 +179,8 @@ integer cur;
 reg [12:0] row;
 
 wire act = cmd==4'd3 && sdram_ba==BA;
+wire rdc = cmd==4'd5 && sdram_ba==BA;
+wire wrc = cmd==4'd4 && sdram_ba==BA;
 
 always @(posedge clk or posedge rst) begin
     if(rst) begin
@@ -157,7 +188,11 @@ always @(posedge clk or posedge rst) begin
         longest <= 0;
         samerow <= 0;
         cur <= 0;
+        rdcnt <= 0;
+        wrcnt <= 0;
     end else begin
+        if( rdc ) rdcnt <= rdcnt+1;
+        if( wrc ) wrcnt <= wrcnt+1;
         if( act ) begin
             if( sdram_a == row ) begin
                 cur <= cur + 1;
