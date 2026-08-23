@@ -1,7 +1,35 @@
+# jtcps2w — the CPS-2 WIDE (Vampire Saved) file list.
+#
+# THIS FILE IS NO LONGER cores/cps2/cfg/game.yaml VERBATIM, and the delta IS
+# the core's trust surface. Since slice D1 (14z-107) cps2w carries RTL: a file
+# is copied into cores/cps2w/hdl ONLY when it must differ, and it is then
+# pulled from `cps2w` here and REMOVED from the reference core's list, because
+# jtframe deduplicates by full path and would otherwise compile both copies of
+# the same module. Everything else still resolves to cores/cps2, cores/cps1
+# and cores/cps15, which stay BYTE-UNTOUCHED.
+#
+# THE OVERRIDES, and why each one has to differ (docs/project/mister_map.md):
+#   jtcps2_game.v    — the game top: 24-bit qsnd_addr, the profile gate
+#                      instance, wide_en routed to the sound block.
+#   jtcps15_sound.v  — the QSound block: 24-bit qsnd_addr and the sample-bank
+#                      latch replaced by the gated jtcps2w_qsnd_bank.
+# THE NEW FILES:
+#   jtcps2w_profile.v    — decodes the CPS-2 WIDE bit out of the ROM header.
+#   jtcps2w_qsnd_bank.v  — the gated sample-bank latch (the D1 trust surface).
+#
+# The `qsound.yaml` block below is cores/cps15/cfg/qsound.yaml INLINED minus
+# jtcps15_sound.v: that yaml pulls the shared file, so cps2w cannot include it
+# and override the file at the same time. Keep the two in step by hand if the
+# pin ever moves; tests/test_jtcores_twin.sh freezes this list.
 game:
+  - from: cps2w
+    get:
+      - jtcps2_game.v          # OVERRIDE of cores/cps2/hdl
+      - jtcps15_sound.v        # OVERRIDE of cores/cps15/hdl
+      - jtcps2w_profile.v      # new
+      - jtcps2w_qsnd_bank.v    # new
   - from: cps2
     get:
-      - jtcps2_game.v
       - jtcps2_main.v
       - jtcps2_obj.v
       - jtcps2_objram.v
@@ -21,11 +49,18 @@ game:
   - from: cps1
     get:
       - common.yaml
-  - from: cps15
-    get:
-      - qsound.yaml
 jtframe:
   - from: ram
     get:
       - jtframe_dual_ram16.v
-
+  # --- from cores/cps15/cfg/qsound.yaml, minus the overridden game file ---
+  - from: cpu
+    get:
+      - jtframe_kabuki.v
+  - from: sound
+    get:
+      - jtframe_fir.v
+      - jtframe_uprate2_fir.v
+modules:
+  jt:
+    - name: jtdsp16

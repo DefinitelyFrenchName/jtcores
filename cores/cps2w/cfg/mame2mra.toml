@@ -85,6 +85,30 @@ data=[
     # Spinner games:
     { machine="pzloop2",  offset=40, data="fd" },
     { machine="ecofghtr", offset=40, data="fe" },
+
+    # ── CPS-2 WIDE v1: THE RUNTIME PROFILE BIT (14z-107 slice D1) ─────────
+    # docs/project/mister_map.md §9 Q8, ruled by the maintainer 2026-08-23:
+    # the profile is selected at RUNTIME from a spare header bit, NOT by an
+    # `ifdef`. The MRA is therefore the profile selector, and stock `vsavj`
+    # on jtcps2w.rbf runs as a stock machine BY CONSTRUCTION — which is what
+    # makes CLAUDE.md rule 1 v2's "profile-gated so stock vsavj is untouched"
+    # a fact on FPGA rather than an inertness argument.
+    #
+    # BYTE 41 (0x29). jtcps1_prom_we.v consumes header bytes 0-7 (region
+    # starts), 8-39 (`is_cps`, the CPS config registers) and 40 (JOY_BYTE);
+    # 41-43 fall through every branch and are ignored, and 44-63 are the
+    # CPS-2 key. The header's own comment (jtcps1_prom_we.v:52-54, "6 are
+    # actually used and 10 are reserved") is the licence to use it.
+    #
+    # ACTIVE LOW, and that is forced, not chosen: `fill=0xff` above means an
+    # unwritten byte is 0xFF, and every stock MRA this core emits must stay
+    # byte-identical to cores/cps2's. Only a polarity where the FILL means
+    # "profile off" can do that. jtframe's own JOY_BYTE is the same shape
+    # (0xFF = mode 3; games wanting mode 0 write 0xFC).
+    #
+    # setname="vsavjw" scores 3 in Selectable.Match, so this row applies to
+    # the WIDE set and to nothing else — no other MRA gains a byte.
+    { setname="vsavjw",   offset=41, data="fe" },
 ]
 
 [rom]
