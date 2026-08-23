@@ -143,11 +143,14 @@ class SimInputs {
 public:
     SimInputs( UUT& _dut) : dut(_dut) {
         dut.dip_pause=1;
-        dut.joystick1 = 0xff;
-        dut.joystick2 = 0xff;
+        // joystick1..4 are [9:0] in game_test.v and ACTIVE LOW, so 0xff would
+        // seed buttons 5 and 6 PRESSED. parse_inputs() never writes
+        // joystick2..4, so that seed would hold them down for the whole run.
+        dut.joystick1 = 0x3ff;
+        dut.joystick2 = 0x3ff;
 #ifdef _JTFRAME_4PLAYERS
-        dut.joystick3 = 0xff;
-        dut.joystick4 = 0xff;
+        dut.joystick3 = 0x3ff;
+        dut.joystick4 = 0x3ff;
 #endif
         dut.cab_1p = 0xf;
         dut.coin   = 0xf;
@@ -198,18 +201,20 @@ public:
         dut.coin   = 0xc | (v&3);
         dut.joystick1    = 0x30f | ((v>>4)&0xf0); // buttons 1~4
         v >>= 4;    // directions:
-        dut.joystick1    = (dut.joystick1&0xf0) | (v&0xf); // _JTFRAME_JOY_UDLR
+        // ~0xf, not 0xf0: keep EVERY button bit the port has. joystick1 is
+        // [9:0] and active low, so masking to 8 bits asserts buttons 5 and 6.
+        dut.joystick1    = (dut.joystick1&~0xf) | (v&0xf); // _JTFRAME_JOY_UDLR
 #ifdef _JTFRAME_JOY_LRUD
-        dut.joystick1    = (dut.joystick1&0xf0) | ((v&3)<<2) | ((v>>2)&3);
+        dut.joystick1    = (dut.joystick1&~0xf) | ((v&3)<<2) | ((v>>2)&3);
 #endif
 #ifdef _JTFRAME_JOY_RLDU
-        dut.joystick1    = (dut.joystick1&0xf0) | ((v&1)<<3) | ((v&2)<<1) | ((v&4)>>1) | ((v&8)>>3);
+        dut.joystick1    = (dut.joystick1&~0xf) | ((v&1)<<3) | ((v&2)<<1) | ((v&4)>>1) | ((v&8)>>3);
 #endif
 #ifdef _JTFRAME_JOY_DURL
-        dut.joystick1    = (dut.joystick1&0xf0) | ((v&8)>>1) | ((v&4)<<1) | ((v&2)>>1) | ((v&1)<<1);
+        dut.joystick1    = (dut.joystick1&~0xf) | ((v&8)>>1) | ((v&4)<<1) | ((v&2)>>1) | ((v&1)<<1);
 #endif
 #ifdef _JTFRAME_JOY_UDRL
-        dut.joystick1    = (dut.joystick1&0xf0) | (v&0xc) | ((v&2)>>1) | ((v&1)<<1);
+        dut.joystick1    = (dut.joystick1&~0xf) | (v&0xc) | ((v&2)>>1) | ((v&1)<<1);
 #endif
         if( coin_l != (dut.coin&3) && coin_l!=3 ) {
             cout << "\ncoin inserted (sim_inputs.hex line " << line << ")\n";
