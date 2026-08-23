@@ -1019,10 +1019,31 @@ void JTSim::video_dump() {
                                 (coremod&1) ? (CCW ? "-rotate -90" : "-rotate 90") : "", // rotate vertical games
                                 convert_options.c_str(), frame_cnt);
                             if( system(exes) ) {
-                                printf("WARNING: (test.cpp) convert tool did not succeed\n");
+                                // stderr, not stdout: _exit() below skips the
+                                // stdio cleanup on purpose, so a BUFFERED
+                                // warning would simply be lost.
+                                fputs("WARNING: (test.cpp) convert tool did not succeed\n",stderr);
                             }
                         }
-                        exit(0);
+                        // Vampire Saved (VS fork): _exit, NOT exit. exit()
+                        // runs the C stdio cleanup, which fclose()s every
+                        // open C stream -- and libc++'s basic_filebuf IS a
+                        // FILE*, so the child closes the COPY of the parent's
+                        // sim_inputs.hex stream it inherited. POSIX requires
+                        // fclose() on a seekable read stream to reposition
+                        // the underlying file description to the stream's
+                        // logical position, and that description is SHARED
+                        // with the parent -- so the parent's next buffer
+                        // refill re-reads input lines it had already
+                        // consumed. Measured: the simulated controller script
+                        // is replayed, once per fork, and since the number of
+                        // forks follows the PICTURE the simulated 68k's state
+                        // followed the picture too (14z-107 (7)). exit() also
+                        // flushed a COPY of the parent's buffered stdout,
+                        // duplicating log lines once per child. _exit() does
+                        // neither: it is the correct call for a forked child
+                        // that has nothing of its own to flush.
+                        _exit(0);
                     }
                 }
                 // ...and REAP them. Upstream never wait()s, so a long run
