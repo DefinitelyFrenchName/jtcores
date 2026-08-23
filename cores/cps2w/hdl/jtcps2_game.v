@@ -30,7 +30,7 @@ module jtcps2_game(
 //   1. `qsnd_addr` 23 -> 24 bits;
 //   2. `wide_en` decoded from the ROM header by jtcps2w_profile;
 //   3. that wire routed into jtcps15_sound;
-//   4. the PCM slot fed with qsnd_addr[22:0].
+//   4. the full 24-bit qsnd_addr handed to jtcps1_sdram, which SPLITS it.
 // On (4) — and it CORRECTS the design note that said `PCM_AW` 23 -> 24:
 // jtframe's 8-bit SDRAM slot CANNOT be widened past SDRAMW. `sdram_addr =
 // offset + { {SDRAMW-AW{1'b0}}, addr_req>>(DW==8) }`
@@ -38,9 +38,17 @@ module jtcps2_game(
 // which is a hard Verilator error, not a warning. That is also why the
 // placement map splits QSound across two banks rather than growing one slot:
 // bank 1 keeps the stock 8 MB at 23 bits and the 0x80+ extension gets its own
-// 1 MB window in bank 0 (slice D2). Until then bit 23 is produced, gated and
-// unrouted; with wide_en LOW it is constant 0, so the PCM address the slot
-// sees is bit-for-bit the reference core's.
+// 1 MB window in bank 0. SLICE D2 IS WHERE THAT SPLIT LANDED: the game top
+// now passes all 24 bits and cores/cps2w/hdl/jtcps1_sdram.v routes bit 23.
+//
+// SLICE D2 adds three more deltas, all of them one line each:
+//   5. `wide_en` routed into jtcps1_sdram (the download redirects and the two
+//      read-side selects all take it there);
+//   6. the SDRAM instance resolves to cores/cps2w/hdl/jtcps1_sdram.v;
+//   7. `rom0_bank` widened to 3 bits at the SDRAM port, with bit 2 TIED LOW —
+//      that bit is the CPS-2 Turbo obj promote and it is slice D3's. Until
+//      then the two group-C read slots are provably unreachable and D2's
+//      evidence is the SDRAM image census, not a fetch.
 // ---------------------------------------------------------------------------
 
 wire        clk_gfx, rst_gfx;
@@ -62,6 +70,10 @@ wire        ppu1_cs, ppu2_cs, ppu_rstn, objcfg_cs;
 wire        raster;
 wire [19:0] rom1_addr, rom0_addr;
 wire [ 1:0] rom0_bank;
+// CPS-2 WIDE: the SDRAM side takes THREE bank bits. Bit 2 selects GFX group C
+// and is driven by the obj promote in slice D3; it is tied low here so D2
+// changes no fetch at all.
+wire [ 2:0] rom0_bank_sdram = { 1'b0, rom0_bank };
 wire [31:0] rom0_data, rom1_data;
 // Video RAM interface
 wire [17:1] vram_dma_addr;
@@ -452,6 +464,7 @@ jtcps2w_profile u_profile(
 
 jtcps1_sdram #(.CPS(2), .REGSIZE(REGSIZE)) u_sdram (
     .rst         ( rst_sdram     ),
+    .wide_en     ( wide_en       ),
     .clk         ( clk           ),
     .clk_gfx     ( clk_gfx       ),
     .clk_cpu     ( clk48         ),
@@ -531,9 +544,10 @@ jtcps1_sdram #(.CPS(2), .REGSIZE(REGSIZE)) u_sdram (
     .pcm_ok      ( qsnd_ok       ),
 
     .snd_addr    ( snd_addr      ),
-    // [23] is the WIDE extension bank bit; the split that consumes it is
-    // slice D2. It is 0 whenever wide_en is 0.
-    .pcm_addr    ( qsnd_addr[22:0] ),
+    // [23] is the WIDE extension bank bit and jtcps1_sdram SPLITS on it
+    // (slice D2): 0 -> bank 1 offset 0, the stock 8 MB; 1 -> the 1 MB window
+    // in bank 0. It is 0 whenever wide_en is 0.
+    .pcm_addr    ( qsnd_addr     ),
 
     .snd_data    ( snd_data      ),
     .pcm_data    ( qsnd_data     ),
@@ -546,7 +560,7 @@ jtcps1_sdram #(.CPS(2), .REGSIZE(REGSIZE)) u_sdram (
     .rom1_ok     ( rom1_ok       ),
 
     .rom0_addr   ( rom0_addr     ),
-    .rom0_bank   ( rom0_bank     ),
+    .rom0_bank   ( rom0_bank_sdram ),
     .rom1_addr   ( rom1_addr     ),
 
     .rom0_half   ( rom0_half     ),

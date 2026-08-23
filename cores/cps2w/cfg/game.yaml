@@ -10,22 +10,37 @@
 #
 # THE OVERRIDES, and why each one has to differ (docs/project/mister_map.md):
 #   jtcps2_game.v    — the game top: 24-bit qsnd_addr, the profile gate
-#                      instance, wide_en routed to the sound block.
+#                      instance, wide_en routed to the sound block and to the
+#                      SDRAM block, rom0_bank widened to 3 bits (D1 + D2).
 #   jtcps15_sound.v  — the QSound block: 24-bit qsnd_addr and the sample-bank
-#                      latch replaced by the gated jtcps2w_qsnd_bank.
+#                      latch replaced by the gated jtcps2w_qsnd_bank (D1).
+#   jtcps1_sdram.v   — SLICE D2: the bank-0 re-pack, the QSound read split on
+#                      pcm_addr[23], the group-C obj read select, and the two
+#                      new slot counts (7 in bank 0, 2 in bank 1).
+#   jtcps1_prom_we.v — SLICE D2: the DOWNLOAD-side group-C redirect and the
+#                      QSound bank split, both gated by wide_en.
 # THE NEW FILES:
 #   jtcps2w_profile.v    — decodes the CPS-2 WIDE bit out of the ROM header.
 #   jtcps2w_qsnd_bank.v  — the gated sample-bank latch (the D1 trust surface).
 #
-# The `qsound.yaml` block below is cores/cps15/cfg/qsound.yaml INLINED minus
-# jtcps15_sound.v: that yaml pulls the shared file, so cps2w cannot include it
-# and override the file at the same time. Keep the two in step by hand if the
-# pin ever moves; tests/test_jtcores_twin.sh freezes this list.
+# THE `common.yaml` BLOCK below is cores/cps1/cfg/common.yaml INLINED minus
+# jtcps1_sdram.v and jtcps1_prom_we.v, for exactly the reason the `qsound.yaml`
+# block was inlined at D1: that yaml pulls the shared files, so cps2w cannot
+# include it and override them at the same time. Keep the two in step by hand
+# if the pin ever moves; tests/test_jtcores_twin.sh freezes this list.
+#
+# jtframe_ram1_7slots.v is an ADDITION to modules/jtframe/hdl/sdram (a
+# mechanical member of the ram1_Nslots family, which upstream stops at 5). It
+# is pulled HERE and not from jtframe's own jtframe_sdram64.yaml on purpose:
+# that yaml is SHARED, and adding a line to it would put the new module on
+# every jtcores core's compile list, including the reference cps2.
 game:
   - from: cps2w
     get:
       - jtcps2_game.v          # OVERRIDE of cores/cps2/hdl
       - jtcps15_sound.v        # OVERRIDE of cores/cps15/hdl
+      - jtcps1_sdram.v         # OVERRIDE of cores/cps1/hdl  (D2)
+      - jtcps1_prom_we.v       # OVERRIDE of cores/cps1/hdl  (D2)
       - jtcps2w_profile.v      # new
       - jtcps2w_qsnd_bank.v    # new
   - from: cps2
@@ -46,21 +61,64 @@ game:
       - jtcps2_fn_sbox.v
       - jtcps2_sbox.v
       - jtcps2_dec_ctrl.v
+  # --- from cores/cps1/cfg/common.yaml, minus the two overridden files ---
   - from: cps1
     get:
-      - common.yaml
+      - jtcps1_video.v
+      - jtcps1_scroll.v
+      - jtcps1_timing.v
+      - jtcps1_tilemap.v
+      - jtcps1_colmix.v
+      - jtcps1_pal.v
+      - jtcps1_mmr.v
+      - jtcps1_obj_line_table.v
+      - jtcps1_obj_tile_match.v
+      - jtcps1_obj_draw.v
+      - jtcps1_obj_line.v
+      - jtcps1_stars.v
+      - jtcps1_gfx_mappers.v
+      - jtcps1_cpucen.v
+      - jtcps1_dma.v
+      - jtcps1_watch.v
 jtframe:
   - from: ram
     get:
       - jtframe_dual_ram16.v
-  # --- from cores/cps15/cfg/qsound.yaml, minus the overridden game file ---
+      - jtframe_dual_ram.v
+      - jtframe_ram.v
   - from: cpu
     get:
+      - jtframe_z80.yaml
+      - jtframe_virq.v
+      - jtframe_m68k.yaml
       - jtframe_kabuki.v
+  - from: sdram
+    get:
+      - jtframe_romrq.v
+      - jtframe_ram_rq.v
+      - jtframe_ram1_7slots.v    # ADDED to jtframe by this project (D2)
+  - from: video
+    get:
+      - jtframe_credits.v
+  - from: keyboard
+    get:
+      - jt4701.v
+      - jtframe_dial.v
+  - from: clocking
+    get:
+      - jtframe_cen48.v
+      - jtframe_cen96.v
+      - jtframe_frac_cen.v
   - from: sound
     get:
+      - jtframe_mixer.v
       - jtframe_fir.v
       - jtframe_uprate2_fir.v
 modules:
   jt:
     - name: jtdsp16
+  other:
+    - from: jteeprom/hdl
+      get:
+      - jt9346_16b8b.v
+      - jt9346.v
