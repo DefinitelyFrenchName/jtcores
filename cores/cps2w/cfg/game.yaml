@@ -26,6 +26,9 @@
 #   jtcps1_obj_draw.v— SLICE D3: the 3-bit bank in and out. Width only.
 #   jtcps1_video.v   — SLICE D3: the 3-bit rom0_bank out, and wide_en in on
 #                      its way to the object scanner.
+#   jtcps2_main.v    — SLICE D4: the 6 MB program window — a READ-ONLY decode
+#                      into CPU:$400000-$5FFFFF, the widened rom_addr and the
+#                      wait-state boundary, all gated by wide_en.
 # THE NEW FILES:
 #   jtcps2w_profile.v    — decodes the CPS-2 WIDE bit out of the ROM header.
 #   jtcps2w_qsnd_bank.v  — the gated sample-bank latch (the D1 trust surface).
@@ -55,12 +58,12 @@ game:
       - jtcps2_obj.v           # OVERRIDE of cores/cps2/hdl  (D3)
       - jtcps1_obj_draw.v      # OVERRIDE of cores/cps1/hdl  (D3)
       - jtcps1_video.v         # OVERRIDE of cores/cps1/hdl  (D3)
+      - jtcps2_main.v          # OVERRIDE of cores/cps2/hdl  (D4)
       - jtcps2w_profile.v      # new
       - jtcps2w_qsnd_bank.v    # new
       - jtcps2w_obj_bank.v     # new  (D3)
   - from: cps2
     get:
-      - jtcps2_main.v
       - jtcps2_objram.v
       - jtcps2_obj_frame.v
       - jtcps2_colmix.v

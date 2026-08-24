@@ -60,6 +60,13 @@ module jtcps2_game(
 //      scanner: the promote is gated at its source as well as at its
 //      destination, so with the profile clear bit 2 is 0 by construction and
 //      every downstream expression collapses to the reference core's.
+//
+// SLICE D4 adds the 6 MB PROGRAM WINDOW:
+//  10. `main_rom_addr` widened from [21:1] to [22:1] — 8 MB of reach, 6 MB
+//      loaded — and `SLOT3_AW` follows it in jtcps1_sdram. The extra bit is 0
+//      for every stock address, so the word address is unchanged there.
+//  11. `wide_en` routed into jtcps2_main, which is where the read decode and
+//      the wait-state boundary are gated.
 // ---------------------------------------------------------------------------
 
 wire        clk_gfx, rst_gfx;
@@ -74,7 +81,7 @@ wire [23:0] qsnd_addr;   // CPS-2 WIDE: [23] = DSP sample bank 0x80+
 wire        prog_qsnd;
 wire [ 7:0] snd_data, qsnd_data;
 wire [17:1] ram_addr;
-wire [21:1] main_rom_addr;
+wire [22:1] main_rom_addr;   // CPS-2 WIDE: 6 MB of program (slice D4)
 wire [15:0] main_ram_data, main_rom_data, main_dout, mmr_dout;
 wire        main_rom_ok, main_ram_ok;
 wire        ppu1_cs, ppu2_cs, ppu_rstn, objcfg_cs;
@@ -182,6 +189,7 @@ wire busack_cpu;
 `ifndef NOMAIN
 jtcps2_main u_main(
     .rst        ( rst48             ),
+    .wide_en    ( wide_en           ),
     .clk_rom    ( clk96             ),
     .clk        ( clk48             ),
     .cpu_cen    ( cpu_cen           ),

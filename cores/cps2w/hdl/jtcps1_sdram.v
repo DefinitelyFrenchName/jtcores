@@ -102,7 +102,7 @@ module jtcps1_sdram #( parameter
     // Main CPU
     input           main_rom_cs,
     output          main_rom_ok,
-    input    [20:0] main_rom_addr,
+    input    [21:0] main_rom_addr,   // CPS-2 WIDE: 6 MB of program (slice D4)
     output   [15:0] main_rom_data,
 
     // VRAM
@@ -355,7 +355,11 @@ jtframe_ram1_7slots #(
     .SLOT2_DOUBLE(  1            ),
     .SLOT2_OFFSET( ORAM_OFFSET   ),
 
-    .SLOT3_AW    ( 21            ), // Main CPU ROM
+    .SLOT3_AW    ( CPS==2 ? 22 : 21 ), // Main CPU ROM. CPS-2 WIDE declares 6 MB,
+                                  // so the slot has to reach past 4 MB. The
+                                  // extra bit is 0 for every stock address and
+                                  // SLOT3_OFFSET is unchanged, so a stock read
+                                  // lands on the same SDRAM word.
     .SLOT3_DW    ( 16            ),
     .SLOT3_LATCH (  1            ),
     .SLOT3_DOUBLE(  1            ),
