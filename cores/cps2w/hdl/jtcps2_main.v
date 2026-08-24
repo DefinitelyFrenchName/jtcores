@@ -425,6 +425,12 @@ jtcps2_dtack u_dtack(
 jtcps2_decrypt u_decrypt(
     .rst        ( 1'b0      ), // must be on during ROM download
     .clk        ( clk_rom   ),
+    // CPS-2 WIDE (slice D5): the key's encrypted-opcode RANGE word is stored
+    // complemented and jtcps2_dec_ctrl compares against it uncomplemented, so
+    // the reference core decrypts opcode fetches to CPU:$F03FFF where MAME and
+    // FBNeo stop at $0FFFFF. Harmless on every stock game (nothing executes
+    // above the window); fatal for a profile that puts CODE at $400000+.
+    .wide_en    ( wide_en   ),
 
     // Key download
     .prog_din   ( prog_din  ),

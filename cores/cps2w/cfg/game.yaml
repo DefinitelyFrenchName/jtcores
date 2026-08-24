@@ -29,6 +29,16 @@
 #   jtcps2_main.v    — SLICE D4: the 6 MB program window — a READ-ONLY decode
 #                      into CPU:$400000-$5FFFFF, the widened rom_addr and the
 #                      wait-state boundary, all gated by wide_en.
+#   jtcps2_decrypt.v — SLICE D5: THE DECRYPTION RANGE. The CPS-2 key's range
+#                      word is stored COMPLEMENTED (MAME/FBNeo
+#                      `~decoded[9] & 0x3ff`) and jtcps2_dec_ctrl compares
+#                      against it UNcomplemented, so the reference core
+#                      decrypts opcode fetches to CPU:$F03FFF where the two
+#                      emulators stop at $0FFFFF. Invisible on every stock
+#                      game — only Capcom's own encrypted code ever executes,
+#                      and data reads are never decrypted — and fatal for a
+#                      profile that puts CODE above 4 MB. One gated
+#                      expression; jtcps2_dec_ctrl itself is untouched.
 # THE NEW FILES:
 #   jtcps2w_profile.v    — decodes the CPS-2 WIDE bit out of the ROM header.
 #   jtcps2w_qsnd_bank.v  — the gated sample-bank latch (the D1 trust surface).
@@ -59,6 +69,7 @@ game:
       - jtcps1_obj_draw.v      # OVERRIDE of cores/cps1/hdl  (D3)
       - jtcps1_video.v         # OVERRIDE of cores/cps1/hdl  (D3)
       - jtcps2_main.v          # OVERRIDE of cores/cps2/hdl  (D4)
+      - jtcps2_decrypt.v       # OVERRIDE of cores/cps2/hdl  (D5)
       - jtcps2w_profile.v      # new
       - jtcps2w_qsnd_bank.v    # new
       - jtcps2w_obj_bank.v     # new  (D3)
@@ -71,7 +82,6 @@ game:
       - jtcps2_dtack.v
         # Encryption
       - jtcps2_keyload.v
-      - jtcps2_decrypt.v
       - jtcps2_fn1.v
       - jtcps2_fn2.v
       - jtcps2_fn_sbox.v
