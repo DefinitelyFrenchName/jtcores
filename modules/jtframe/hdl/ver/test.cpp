@@ -90,6 +90,167 @@ using namespace std;
     #endif
 #endif
 
+// Vampire Saved (VS fork): SDRAM READ PROBE — count the reads the CORE issues
+// into named byte windows of named banks. Enabled ONLY when
+// _JTFRAME_SIM_RDPROBE is defined (jtsim -d JTFRAME_SIM_RDPROBE=1); absent,
+// every line below compiles out and the harness is byte-for-byte upstream's.
+//
+// WHY IT EXISTS. The MiSTer slice that makes CPS-2 WIDE's third object-bank
+// bit live (D3, docs/project/mister_core.md section 7) has to prove a FETCH,
+// not a picture: "the core read tile bytes out of the group-C region" is a
+// claim about the memory bus, and a rendered frame is downstream evidence for
+// it. The SDRAM model already sees every read address, so the probe is two
+// counters in SDRAM::update() and nothing else.
+//
+// UNITS. One count = one 16-bit word delivered by the model, i.e. one beat of
+// a burst — NOT one ACTIVATE. jtframe_sdram_stats_sim counts ACTIVATE
+// commands; do not compare the two numbers without dividing by the burst
+// length.
+//
+// The windows are byte offsets INSIDE a bank, half-open [LO,HI). A probe with
+// HI<=LO is disabled. FOUR slots, which is what it takes to make ONE run
+// self-certifying: the windows under test, plus at least one window that MUST
+// see traffic — so a zero result is evidence about the CORE and not about the
+// probe.
+// CODE_SHIFT names the granularity the probe tallies DISTINCT hits at: on
+// CPS-2 a GFX tile is 128 bytes and its SDRAM address is its tile code times
+// 128, so CODE_SHIFT=7 turns the probe's address list into a TILE-CODE list.
+#ifdef _JTFRAME_SIM_RDPROBE
+    #include <vector>
+    #ifndef _JTFRAME_SIM_RDPROBE0_BANK
+        #define _JTFRAME_SIM_RDPROBE0_BANK 0
+    #endif
+    #ifndef _JTFRAME_SIM_RDPROBE0_LO
+        #define _JTFRAME_SIM_RDPROBE0_LO 0
+    #endif
+    #ifndef _JTFRAME_SIM_RDPROBE0_HI
+        #define _JTFRAME_SIM_RDPROBE0_HI 0
+    #endif
+    #ifndef _JTFRAME_SIM_RDPROBE1_BANK
+        #define _JTFRAME_SIM_RDPROBE1_BANK 0
+    #endif
+    #ifndef _JTFRAME_SIM_RDPROBE1_LO
+        #define _JTFRAME_SIM_RDPROBE1_LO 0
+    #endif
+    #ifndef _JTFRAME_SIM_RDPROBE1_HI
+        #define _JTFRAME_SIM_RDPROBE1_HI 0
+    #endif
+    #ifndef _JTFRAME_SIM_RDPROBE2_BANK
+        #define _JTFRAME_SIM_RDPROBE2_BANK 0
+    #endif
+    #ifndef _JTFRAME_SIM_RDPROBE2_LO
+        #define _JTFRAME_SIM_RDPROBE2_LO 0
+    #endif
+    #ifndef _JTFRAME_SIM_RDPROBE2_HI
+        #define _JTFRAME_SIM_RDPROBE2_HI 0
+    #endif
+    #ifndef _JTFRAME_SIM_RDPROBE3_BANK
+        #define _JTFRAME_SIM_RDPROBE3_BANK 0
+    #endif
+    #ifndef _JTFRAME_SIM_RDPROBE3_LO
+        #define _JTFRAME_SIM_RDPROBE3_LO 0
+    #endif
+    #ifndef _JTFRAME_SIM_RDPROBE3_HI
+        #define _JTFRAME_SIM_RDPROBE3_HI 0
+    #endif
+    #ifndef _JTFRAME_SIM_RDPROBE_SHIFT
+        #define _JTFRAME_SIM_RDPROBE_SHIFT 7
+    #endif
+    #define NPROBE 4
+
+struct RdProbe {
+    int  bank;
+    unsigned lo, hi;
+    long long reads, frame_reads;
+    int  first_frame;
+    unsigned first_addr, min_addr, max_addr;
+    std::vector<unsigned char> seen;   // one byte per 1<<SHIFT block
+    long long distinct;
+};
+static RdProbe rdprobe[NPROBE];
+static int  rdprobe_frame = 0;
+static bool rdprobe_ready = false;
+
+static void rdprobe_init() {
+    const int  bk[NPROBE] = { _JTFRAME_SIM_RDPROBE0_BANK, _JTFRAME_SIM_RDPROBE1_BANK,
+                              _JTFRAME_SIM_RDPROBE2_BANK, _JTFRAME_SIM_RDPROBE3_BANK };
+    const unsigned lo[NPROBE] = { _JTFRAME_SIM_RDPROBE0_LO, _JTFRAME_SIM_RDPROBE1_LO,
+                              _JTFRAME_SIM_RDPROBE2_LO, _JTFRAME_SIM_RDPROBE3_LO };
+    const unsigned hi[NPROBE] = { _JTFRAME_SIM_RDPROBE0_HI, _JTFRAME_SIM_RDPROBE1_HI,
+                              _JTFRAME_SIM_RDPROBE2_HI, _JTFRAME_SIM_RDPROBE3_HI };
+    for( int k=0; k<NPROBE; k++ ) {
+        rdprobe[k].bank = bk[k];
+        rdprobe[k].lo   = lo[k];
+        rdprobe[k].hi   = hi[k];
+        rdprobe[k].reads = rdprobe[k].frame_reads = rdprobe[k].distinct = 0;
+        rdprobe[k].first_frame = -1;
+        rdprobe[k].first_addr = 0;
+        rdprobe[k].min_addr = 0xffffffffu;
+        rdprobe[k].max_addr = 0;
+        if( hi[k]>lo[k] )
+            rdprobe[k].seen.assign( ((hi[k]-lo[k])>>_JTFRAME_SIM_RDPROBE_SHIFT)+1, 0 );
+        fprintf(stderr,"RDPROBE %d: bank %d bytes %06X-%06X %s\n",
+            k, bk[k], lo[k], hi[k], hi[k]>lo[k] ? "armed" : "disabled");
+    }
+    rdprobe_ready = true;
+}
+
+static inline void rdprobe_hit( int bank, unsigned byte_addr ) {
+    if( !rdprobe_ready ) return;
+    for( int k=0; k<NPROBE; k++ ) {
+        RdProbe &p = rdprobe[k];
+        if( p.hi<=p.lo || p.bank!=bank ) continue;
+        if( byte_addr<p.lo || byte_addr>=p.hi ) continue;
+        if( p.first_frame<0 ) { p.first_frame = rdprobe_frame; p.first_addr = byte_addr; }
+        p.reads++; p.frame_reads++;
+        if( byte_addr<p.min_addr ) p.min_addr = byte_addr;
+        if( byte_addr>p.max_addr ) p.max_addr = byte_addr;
+        unsigned idx = (byte_addr-p.lo)>>_JTFRAME_SIM_RDPROBE_SHIFT;
+        if( idx<p.seen.size() && !p.seen[idx] ) { p.seen[idx]=1; p.distinct++; }
+    }
+}
+
+// Called once per video frame. Prints ONLY the frames with traffic, so the log
+// dates the first fetch and shows the per-frame profile without a line per
+// idle frame.
+static void rdprobe_frame_end( int frame ) {
+    if( !rdprobe_ready ) return;
+    long long any = 0;
+    for( int k=0; k<NPROBE; k++ ) any += rdprobe[k].frame_reads;
+    if( any )
+        fprintf(stderr,"RDPROBE frame %d p0 %lld p1 %lld p2 %lld p3 %lld\n",
+            frame, rdprobe[0].frame_reads, rdprobe[1].frame_reads,
+            rdprobe[2].frame_reads, rdprobe[3].frame_reads );
+    for( int k=0; k<NPROBE; k++ ) rdprobe[k].frame_reads = 0;
+    rdprobe_frame = frame;
+}
+
+static void rdprobe_report() {
+    if( !rdprobe_ready ) return;
+    for( int k=0; k<NPROBE; k++ ) {
+        RdProbe &p = rdprobe[k];
+        if( p.hi<=p.lo ) continue;
+        fprintf(stderr,"RDPROBE SUMMARY %d bank %d window %06X-%06X reads %lld"
+                       " distinct %lld first_frame %d first_addr %06X"
+                       " min %06X max %06X\n",
+            k, p.bank, p.lo, p.hi, p.reads, p.distinct, p.first_frame,
+            p.first_addr, p.reads ? p.min_addr : 0, p.max_addr );
+        if( p.reads ) {
+            char fname[64];
+            snprintf(fname,64,"rdprobe_%d.txt",k);
+            FILE *f = fopen(fname,"w");
+            if( f ) {
+                for( size_t i=0; i<p.seen.size(); i++ )
+                    if( p.seen[i] ) fprintf(f,"%zu\n", i);
+                fclose(f);
+                fprintf(stderr,"RDPROBE wrote %s (%lld blocks of %d bytes)\n",
+                    fname, p.distinct, 1<<_JTFRAME_SIM_RDPROBE_SHIFT );
+            }
+        }
+    }
+}
+#endif
+
 #define ANSI_COLOR_RED     "\x1b[31m"
 #define ANSI_COLOR_GREEN   "\x1b[32m"
 #define ANSI_COLOR_YELLOW  "\x1b[33m"
@@ -690,6 +851,9 @@ void SDRAM::update() {
                 }
                 // if( rd_st[k]==burst_len ) printf("Read start\n");
                 auto data_read = read_bank( banks[k], ba_addr[k] );
+#ifdef _JTFRAME_SIM_RDPROBE
+                rdprobe_hit( k, (unsigned)ba_addr[k]<<1 );
+#endif
                 //cout << "Read " << std::hex << data_read << " from bank " << k << '\n';
                 dut.SDRAM_DQ = data_read;
                 if( burst_len>1 ) {
@@ -794,6 +958,9 @@ JTSim::JTSim( UUT& g, int argc, char *argv[]) :
     frame_cnt = 0;
     last_LVBL = 0;
     last_VS   = 0;
+#ifdef _JTFRAME_SIM_RDPROBE
+    rdprobe_init();
+#endif
     char *opt = getenv("CONVERT_OPTIONS");
     if ( opt!=NULL ) convert_options = opt;
     get_coremod();
@@ -876,6 +1043,9 @@ void JTSim::get_coremod() {
 }
 
 JTSim::~JTSim() {
+#ifdef _JTFRAME_SIM_RDPROBE
+    rdprobe_report();
+#endif
 #ifdef _DUMP
     delete tracer;
 #endif
@@ -942,6 +1112,9 @@ void JTSim::clock(int n) {
         if( game.VS && !last_VS ) {
             fprintf(stderr,ANSI_COLOR_RED "%X" ANSI_COLOR_RESET, frame_cnt&0xf); // do not flush the streams. It can mess up
             frame_cnt++;
+#ifdef _JTFRAME_SIM_RDPROBE
+            rdprobe_frame_end( frame_cnt );
+#endif
 #ifdef _JTFRAME_SIM_IODUMP
             if( frame_cnt==_JTFRAME_SIM_IODUMP ) dwn.iodump_start();
 #endif
