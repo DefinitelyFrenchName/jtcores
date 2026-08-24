@@ -511,4 +511,150 @@ jtframe_m68k u_cpu(
     .IPLn       ( { int2, int1, 1'b1 } ) // Raster, VBLANK
 );
 
+// ---------------------------------------------------------------------------
+// SIM-ONLY: THE 68k PROGRAM-ROM READ PROBE — the slice D4 discriminator.
+// 14z-107 (11). Compiled out unless `JTCPS2W_PRGPROBE` is defined
+// (`jtsim -d JTCPS2W_PRGPROBE=1`, i.e. tools/run_sim_jtcps2.sh --prgprobe);
+// with the macro absent this block does not exist and the core is character
+// for character what slice D4 shipped.
+//
+// WHY IT EXISTS. D4 declares a 6 MB program window, and the ONLY evidence for
+// it is that its lines are in the RTL: the SDRAM image census proves the bytes
+// are PLACED above CPU:$400000, and nothing proves the 68k can READ them.
+// That hole matters because the WIDE romset does not boot, and the standing
+// reading of "profile-on and profile-off are frame-for-frame identical" is
+// that the profile is innocent — when a BROKEN 6 MB decode fits the same
+// evidence exactly: with the decode dead, `wide_en` set behaves like
+// `wide_en` clear for every read above $400000 and the two legs are identical
+// FOR THAT REASON.
+//
+// WHAT IT WATCHES, AND WHY IT IS TWO INSTRUMENTS AND NOT ONE.
+//   * THE ADDRESS. Every 68k bus cycle is classified by A[23:21], whether or
+//     not anything decodes it. This is the half that survives `wide_en` being
+//     clear: with the profile off `rom_cs` is 0 in the window by construction,
+//     so a chip-select-only probe could not tell "the CPU never addressed
+//     $400000+" from "the CPU addressed it and the decode ignored it". They
+//     are the difference between answer 1 and answer 3.
+//   * THE DATA. Every COMPLETED program-ROM read is logged with the word the
+//     CPU actually latched (`rom_dec`, which is what `cpu_din` takes) and the
+//     raw SDRAM word behind it (`rom_data`). **THE WINDOW BIT IS `rom_addr[22]`,
+//     NOT `[21]`**: `rom_addr` is declared `[22:1]` and takes `A[22:1]`, so its
+//     index IS the 68k address bit and the byte address is `{rom_addr,1'b0}`.
+//     The first draft used `[21]` and reported 2,560 reads "above $400000"
+//     whose addresses were `$38C2A0-$3D8256` — caught in the first frame the
+//     probe fired, by the data contradicting the label. `tools/prgprobe_verdict.py`
+//     now REFUSES any record that falls outside the window it claims. Sampling is on the FALL of
+//     `rom_cs` from the last cycle where `rom_ok & rom_ok2` were both high —
+//     the same condition `bus_busy` uses to release the 68k — so there is one
+//     record per access and it carries the settled value, not a stale `ok`.
+//
+// AND IT CARRIES ITS OWN MUST-FIRE CONTROL, in the same run and the same
+// counters: reads BELOW $400000 are counted and the first PRG_LOGMAX_LO of
+// them are logged with their bytes. A zero above the line means nothing
+// unless the same instrument shows a healthy count below it — and comparing
+// those LOW bytes against the .rom validates the byte-comparison procedure
+// itself, on addresses the game is provably executing from.
+//
+// Rule 7: the log holds ROM bytes. It is written to the simulation directory
+// (a scratch clone) and collected into an out-dir OUTSIDE the repo; it is
+// never committed, exactly like the .rom and the SDRAM bank images.
+// ---------------------------------------------------------------------------
+`ifdef JTCPS2W_PRGPROBE
+localparam PRG_LOGMAX_HI = 20000,   // full records kept above CPU:$400000
+           PRG_LOGMAX_LO =  2000;   // ...and below it (the control sample)
+
+integer prg_fd;
+integer prg_frame;                          // LVBL falls since time 0
+integer prg_cyc_all, prg_cyc_hi_rd, prg_cyc_hi_wr;  // 68k BUS CYCLES
+integer prg_rd_hi, prg_rd_lo;               // COMPLETED rom_cs reads
+integer prg_hi_logged, prg_lo_logged, prg_blk_n, prg_i;
+integer prg_hi_first;                       // first frame with a HI read, -1 = never
+reg [22:1] prg_hi_min, prg_hi_max, prg_hi_firstaddr;
+reg        prg_blk [0:8191];                // 256-byte blocks of the 2 MB window
+reg        prg_lvbl_l, prg_asn_l, prg_v;
+reg [22:1] prg_a;
+reg [15:0] prg_d, prg_raw;
+reg [ 2:0] prg_fc;
+
+initial begin
+    prg_fd = $fopen("prgprobe.txt","w");
+    prg_frame=0; prg_cyc_all=0; prg_cyc_hi_rd=0; prg_cyc_hi_wr=0;
+    prg_rd_hi=0; prg_rd_lo=0; prg_hi_logged=0; prg_lo_logged=0; prg_blk_n=0;
+    prg_hi_min={22{1'b1}}; prg_hi_max=0; prg_hi_first=-1; prg_hi_firstaddr=0;
+    prg_v=0; prg_lvbl_l=1; prg_asn_l=1;
+    prg_a=0; prg_d=0; prg_raw=0; prg_fc=0;
+    for( prg_i=0; prg_i<8192; prg_i=prg_i+1 ) prg_blk[prg_i]=1'b0;
+    $fdisplay(prg_fd,"# PRGPROBE 68k program-ROM read path (cores/cps2w/hdl/jtcps2_main.v)");
+    $fdisplay(prg_fd,"# CYC <frame> <R|W> <cpu_byte_addr> <fc>   a 68k bus cycle in CPU:$400000-$5FFFFF");
+    $fdisplay(prg_fd,"# HI  <frame> <cpu_byte_addr> <cpu_word> <raw_word> <fc>   completed rom_cs read >= $400000");
+    $fdisplay(prg_fd,"# LO  <frame> <cpu_byte_addr> <cpu_word> <raw_word> <fc>   ... < $400000 (the must-fire control)");
+end
+
+// -- the ADDRESS half: one record per 68k bus cycle, decode-independent -----
+always @(posedge clk) begin
+    prg_asn_l <= ASn;
+    if( prg_asn_l && !ASn && BGACKn ) begin
+        prg_cyc_all <= prg_cyc_all+1;
+        if( A[23:21]==3'b010 ) begin
+            if( RnW ) prg_cyc_hi_rd <= prg_cyc_hi_rd+1;
+            else      prg_cyc_hi_wr <= prg_cyc_hi_wr+1;
+            if( prg_cyc_hi_rd+prg_cyc_hi_wr < PRG_LOGMAX_HI )
+                $fdisplay(prg_fd,"CYC %0d %s %06x %0d", prg_frame,
+                          RnW ? "R" : "W", {A,1'b0}, FC);
+        end
+    end
+end
+
+// -- the DATA half: one record per COMPLETED program-ROM read --------------
+always @(posedge clk) begin
+    if( rom_cs && rom_ok && rom_ok2 ) begin
+        prg_v <= 1'b1; prg_a <= rom_addr; prg_d <= rom_dec; prg_raw <= rom_data;
+        prg_fc <= FC;
+    end
+    if( !rom_cs && prg_v ) begin
+        prg_v <= 1'b0;
+        if( prg_a[22] ) begin       // A[22] set == CPU:$400000-$5FFFFF
+            prg_rd_hi <= prg_rd_hi+1;
+            if( prg_hi_first < 0 ) begin
+                prg_hi_first <= prg_frame; prg_hi_firstaddr <= prg_a;
+            end
+            if( prg_a < prg_hi_min ) prg_hi_min <= prg_a;
+            if( prg_a > prg_hi_max ) prg_hi_max <= prg_a;
+            if( !prg_blk[prg_a[20:8]] ) begin
+                prg_blk[prg_a[20:8]] <= 1'b1; prg_blk_n <= prg_blk_n+1;
+            end
+            if( prg_hi_logged < PRG_LOGMAX_HI ) begin
+                prg_hi_logged <= prg_hi_logged+1;
+                $fdisplay(prg_fd,"HI %0d %06x %04x %04x %0d", prg_frame,
+                          {prg_a,1'b0}, prg_d, prg_raw, prg_fc);
+            end
+        end else begin
+            prg_rd_lo <= prg_rd_lo+1;
+            if( prg_lo_logged < PRG_LOGMAX_LO ) begin
+                prg_lo_logged <= prg_lo_logged+1;
+                $fdisplay(prg_fd,"LO %0d %06x %04x %04x %0d", prg_frame,
+                          {prg_a,1'b0}, prg_d, prg_raw, prg_fc);
+            end
+        end
+    end
+end
+
+// -- the per-frame report. The LAST line of a run is its summary. ----------
+always @(posedge clk) begin
+    prg_lvbl_l <= LVBL;
+    if( prg_lvbl_l && !LVBL ) begin
+        prg_frame <= prg_frame+1;
+        $display("PRGPROBE frame %0d wide %0d cyc %0d cyc_hi_rd %0d cyc_hi_wr %0d rd_hi %0d rd_lo %0d blocks %0d first_frame %0d first_addr %06x min %06x max %06x",
+                 prg_frame, wide_en, prg_cyc_all, prg_cyc_hi_rd, prg_cyc_hi_wr,
+                 prg_rd_hi, prg_rd_lo, prg_blk_n, prg_hi_first,
+                 {prg_hi_firstaddr,1'b0}, {prg_hi_min,1'b0}, {prg_hi_max,1'b0});
+        $fdisplay(prg_fd,"PRGPROBE frame %0d wide %0d cyc %0d cyc_hi_rd %0d cyc_hi_wr %0d rd_hi %0d rd_lo %0d blocks %0d first_frame %0d first_addr %06x min %06x max %06x",
+                 prg_frame, wide_en, prg_cyc_all, prg_cyc_hi_rd, prg_cyc_hi_wr,
+                 prg_rd_hi, prg_rd_lo, prg_blk_n, prg_hi_first,
+                 {prg_hi_firstaddr,1'b0}, {prg_hi_min,1'b0}, {prg_hi_max,1'b0});
+        $fflush(prg_fd);
+    end
+end
+`endif
+
 endmodule
