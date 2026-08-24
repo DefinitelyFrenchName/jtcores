@@ -19,9 +19,19 @@
 #                      new slot counts (7 in bank 0, 2 in bank 1).
 #   jtcps1_prom_we.v — SLICE D2: the DOWNLOAD-side group-C redirect and the
 #                      QSound bank split, both gated by wide_en.
+#   jtcps2_obj_scan.v— SLICE D3: THE OBJ PROMOTE. The CPS-2 Turbo rule — after
+#                      the sprite-list terminator test, promote y bit 12 and
+#                      read a 3-bit GFX bank — gated by wide_en.
+#   jtcps2_obj.v     — SLICE D3: the 3-bit bank wire and output port.
+#   jtcps1_obj_draw.v— SLICE D3: the 3-bit bank in and out. Width only.
+#   jtcps1_video.v   — SLICE D3: the 3-bit rom0_bank out, and wide_en in on
+#                      its way to the object scanner.
 # THE NEW FILES:
 #   jtcps2w_profile.v    — decodes the CPS-2 WIDE bit out of the ROM header.
 #   jtcps2w_qsnd_bank.v  — the gated sample-bank latch (the D1 trust surface).
+#   jtcps2w_obj_bank.v   — the gated CPS-2 Turbo obj promote (the D3 trust
+#                          surface), lifted out of jtcps2_obj_scan so it can be
+#                          swept over all 65,536 y-words in both profile states.
 #
 # THE `common.yaml` BLOCK below is cores/cps1/cfg/common.yaml INLINED minus
 # jtcps1_sdram.v and jtcps1_prom_we.v, for exactly the reason the `qsound.yaml`
@@ -41,15 +51,18 @@ game:
       - jtcps15_sound.v        # OVERRIDE of cores/cps15/hdl
       - jtcps1_sdram.v         # OVERRIDE of cores/cps1/hdl  (D2)
       - jtcps1_prom_we.v       # OVERRIDE of cores/cps1/hdl  (D2)
+      - jtcps2_obj_scan.v      # OVERRIDE of cores/cps2/hdl  (D3)
+      - jtcps2_obj.v           # OVERRIDE of cores/cps2/hdl  (D3)
+      - jtcps1_obj_draw.v      # OVERRIDE of cores/cps1/hdl  (D3)
+      - jtcps1_video.v         # OVERRIDE of cores/cps1/hdl  (D3)
       - jtcps2w_profile.v      # new
       - jtcps2w_qsnd_bank.v    # new
+      - jtcps2w_obj_bank.v     # new  (D3)
   - from: cps2
     get:
       - jtcps2_main.v
-      - jtcps2_obj.v
       - jtcps2_objram.v
       - jtcps2_obj_frame.v
-      - jtcps2_obj_scan.v
       - jtcps2_colmix.v
       - jtcps2_raster.v
       - jtcps2_dtack.v
@@ -64,7 +77,6 @@ game:
   # --- from cores/cps1/cfg/common.yaml, minus the two overridden files ---
   - from: cps1
     get:
-      - jtcps1_video.v
       - jtcps1_scroll.v
       - jtcps1_timing.v
       - jtcps1_tilemap.v
@@ -73,7 +85,6 @@ game:
       - jtcps1_mmr.v
       - jtcps1_obj_line_table.v
       - jtcps1_obj_tile_match.v
-      - jtcps1_obj_draw.v
       - jtcps1_obj_line.v
       - jtcps1_stars.v
       - jtcps1_gfx_mappers.v

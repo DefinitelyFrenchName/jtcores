@@ -45,10 +45,21 @@ module jtcps2_game(
 //   5. `wide_en` routed into jtcps1_sdram (the download redirects and the two
 //      read-side selects all take it there);
 //   6. the SDRAM instance resolves to cores/cps2w/hdl/jtcps1_sdram.v;
-//   7. `rom0_bank` widened to 3 bits at the SDRAM port, with bit 2 TIED LOW —
-//      that bit is the CPS-2 Turbo obj promote and it is slice D3's. Until
-//      then the two group-C read slots are provably unreachable and D2's
-//      evidence is the SDRAM image census, not a fetch.
+//   7. `rom0_bank` widened to 3 bits at the SDRAM port. D2 left bit 2 TIED
+//      LOW, so the two group-C read slots were provably unreachable and D2's
+//      evidence was the SDRAM image census rather than a fetch.
+//
+// SLICE D3 UNTIES IT, and that is the whole of the slice at this level:
+//   8. `rom0_bank` is now the 3-bit bank the object engine produces, driven
+//      end to end from cores/cps2w/hdl/jtcps2_obj_scan.v's CPS-2 Turbo
+//      promote through jtcps2_obj and jtcps1_video. Bit 2 selects GFX group C
+//      — the three tenants' art — and reaches jtcps1_sdram's `gfxc_sel`,
+//      which is itself ANDed with wide_en. THIS IS THE FIRST SLICE IN WHICH
+//      THE CORE CAN FETCH A TENANT TILE.
+//   9. `wide_en` routed into jtcps1_video, which passes it to the object
+//      scanner: the promote is gated at its source as well as at its
+//      destination, so with the profile clear bit 2 is 0 by construction and
+//      every downstream expression collapses to the reference core's.
 // ---------------------------------------------------------------------------
 
 wire        clk_gfx, rst_gfx;
@@ -69,11 +80,10 @@ wire        main_rom_ok, main_ram_ok;
 wire        ppu1_cs, ppu2_cs, ppu_rstn, objcfg_cs;
 wire        raster;
 wire [19:0] rom1_addr, rom0_addr;
-wire [ 1:0] rom0_bank;
-// CPS-2 WIDE: the SDRAM side takes THREE bank bits. Bit 2 selects GFX group C
-// and is driven by the obj promote in slice D3; it is tied low here so D2
-// changes no fetch at all.
-wire [ 2:0] rom0_bank_sdram = { 1'b0, rom0_bank };
+// CPS-2 WIDE: THREE bank bits, from the CPS-2 Turbo obj promote (slice D3).
+// Bit 2 selects GFX group C and is 0 unless wide_en is set, because the
+// promote that produces it is gated in jtcps2_obj_scan.
+wire [ 2:0] rom0_bank;
 wire [31:0] rom0_data, rom1_data;
 // Video RAM interface
 wire [17:1] vram_dma_addr;
@@ -287,6 +297,7 @@ assign dip_flip = video_flip;
 
 jtcps1_video #(REGSIZE) u_video(
     .rst            ( rst_video     ),
+    .wide_en        ( wide_en       ),
     .clk            ( clk_gfx       ),
     .clk_cpu        ( clk48         ),
     .pxl2_cen       ( pxl2_cen      ),
@@ -560,7 +571,7 @@ jtcps1_sdram #(.CPS(2), .REGSIZE(REGSIZE)) u_sdram (
     .rom1_ok     ( rom1_ok       ),
 
     .rom0_addr   ( rom0_addr     ),
-    .rom0_bank   ( rom0_bank_sdram ),
+    .rom0_bank   ( rom0_bank     ),
     .rom1_addr   ( rom1_addr     ),
 
     .rom0_half   ( rom0_half     ),
