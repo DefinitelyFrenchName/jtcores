@@ -251,6 +251,19 @@ static void rdprobe_report() {
 }
 #endif
 
+// Vampire Saved (VS fork): which frames the image writer above may write.
+// Defaults are upstream's behaviour — every changed frame, from the first to
+// the last.
+#ifndef _JTFRAME_SIM_VIDEO_FIRST
+    #define _JTFRAME_SIM_VIDEO_FIRST 0
+#endif
+#ifndef _JTFRAME_SIM_VIDEO_LAST
+    #define _JTFRAME_SIM_VIDEO_LAST 0x7fffffff
+#endif
+#ifndef _JTFRAME_SIM_VIDEO_STRIDE
+    #define _JTFRAME_SIM_VIDEO_STRIDE 1
+#endif
+
 #define ANSI_COLOR_RED     "\x1b[31m"
 #define ANSI_COLOR_GREEN   "\x1b[32m"
 #define ANSI_COLOR_YELLOW  "\x1b[33m"
@@ -1182,6 +1195,16 @@ void JTSim::video_dump() {
                 // docs/platform/mister.md. Absent the macro this is
                 // upstream's code, byte for byte, plus the reap below.
 #ifndef _JTFRAME_SIM_NOVIDEO
+                // Vampire Saved (VS fork): and even when the writer is
+                // compiled in, only write the frames a run actually wants.
+                // A picture is worth one jpg, not three thousand: without
+                // this a 3,700-frame run forks an ImageMagick child for every
+                // changed frame, which is minutes of CPU and a directory
+                // nobody can find anything in. FIRST/LAST/STRIDE default to
+                // "every frame", i.e. upstream's behaviour.
+                if( frame_cnt >= _JTFRAME_SIM_VIDEO_FIRST &&
+                    frame_cnt <= _JTFRAME_SIM_VIDEO_LAST   &&
+                    (frame_cnt % _JTFRAME_SIM_VIDEO_STRIDE)==0 )
                 if( dump.diff() ) {
                     // converts image to jpg in a different fork
                     // I suppose a thread would be faster...
