@@ -50,11 +50,17 @@
 // of defect survives. Found while reading for slice D2 and recorded in
 // mister_map.md section 8 as "must ship in the same slice as the decode".
 //
-// NOT DECRYPTED, AND THAT IS CORRECT. `jtcps2_dec_ctrl.v:44` decodes only
-// OPCODE fetches (`fc[1:0]==2'b10`) below the key header's range word, which
-// for this game is `$000000-$0FFFFF`. Everything above `PRG:0x0FFFFF` is
-// outside the encryption window, which is why the profile writes extension
-// content RAW (cps2_wide.md). The two agree without either being changed.
+// "NOT DECRYPTED, AND THAT IS CORRECT" — **RETRACTED 14z-107 (11). IT WAS
+// DECRYPTED, AND THAT IS WHAT STOPPED THE WIDE ROMSET BOOTING.**
+// `jtcps2_dec_ctrl.v:44` decodes only OPCODE fetches (`fc[1:0]==2'b10`) below
+// the key header's range word — and the range word is stored COMPLEMENTED.
+// MAME and FBNeo read it that way (`cps2_crpt.cpp:771`, `~decoded[9] & 0x3ff`)
+// and stop at `$000000-$0FFFFF`; jtcps2 reads it straight and runs on to
+// `$F03FFF`. Measured with the probe below: ten opcode fetches at
+// `CPU:$4BE7C0-$4BE7C8`, raw words the `.rom`'s byte for byte, latched words
+// the decryptor's. SLICE D5 (`cores/cps2w/hdl/jtcps2_decrypt.v`) complements
+// the word, profile-gated, which is what makes "the profile writes extension
+// content RAW" (cps2_wide.md) true on this core as well as on the other two.
 // ---------------------------------------------------------------------------
 
 module jtcps2_main(
