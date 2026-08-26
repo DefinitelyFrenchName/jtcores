@@ -147734,9 +147734,9 @@
 		<rom name="vm3.18m" merge="vm3.18m" size="4194304" crc="df9a9f47" sha1="ce29ff00cf4b6fdd9b3b1ed87823534f1d364eab" region="gfx" offset="1000004"/>
 		<rom name="vm3.20m" merge="vm3.20m" size="4194304" crc="c22fc3d9" sha1="df7538c05b03a4ad94d369f8083799979e6fac42" region="gfx" offset="1000006"/>
 		<rom name="vsw.31m" size="4194304" crc="7ce26495" sha1="8ca73214181d3b1c5c294fe5cdf4b6db43abc310" region="gfx" offset="2000000"/>
-		<rom name="vsw.33m" size="4194304" crc="34074943" sha1="a8762ab8d5050c8d6d3ec0f7f585fa671adf1d9c" region="gfx" offset="2000002"/>
+		<rom name="vsw.33m" size="4194304" crc="23afefbf" sha1="6c768bd6bfb8ae2fd0d9216fa75e5cc867d31243" region="gfx" offset="2000002"/>
 		<rom name="vsw.35m" size="4194304" crc="5ef54185" sha1="af04b0c7434d827ee89a1d9cd1263e660871eb41" region="gfx" offset="2000004"/>
-		<rom name="vsw.37m" size="4194304" crc="e430c64e" sha1="876476c379c394ef25a239880c8bc27d84f3eed3" region="gfx" offset="2000006"/>
+		<rom name="vsw.37m" size="4194304" crc="51e98c4c" sha1="1f2fa03e3ced5187a686cf28365339938d59f9f2" region="gfx" offset="2000006"/>
 		<rom name="vsw.z01" size="131072" crc="153600b9" sha1="255e3523b5fc49b63d420c04547a69784eb5171f" region="audiocpu" offset="0"/>
 		<rom name="vsw.z02" size="131072" crc="26b6ecc5" sha1="9f113542d7bc75de01d62743af489e8ccc0559d8" region="audiocpu" offset="28000"/>
 		<rom name="vm3.11m" merge="vm3.11m" size="4194304" crc="e80e956e" sha1="74181fca4b764fb3c56ceef2cb4c6fd6c18ec4b6" region="qsound" offset="0"/>
