@@ -374,6 +374,25 @@ public:
         dut.cab_1p = 0xc | ((v>>2)&3);
         dut.coin   = 0xc | (v&3);
         dut.joystick1    = 0x30f | ((v>>4)&0xf0); // buttons 1~4
+        // ---------------------------------------------------------------
+        // PLAYER 2, added for the CPS-2 WIDE / Vampire Saved oracle work.
+        // File bits 12-15 are P2 directions and 16-19 P2 buttons 1~4, in the
+        // SAME order as P1 (the nibble is MSB-first at the port:
+        // joy[3]=Up [2]=Down [1]=Left [0]=Right, jtframe_keyboard.v:107-110).
+        //
+        // WHY THOSE BITS: everything at and below bit 11 was already spoken
+        // for (coin, start, P1 directions, P1 buttons / dip_test) and bits
+        // 12+ were UNUSED, so every sim_inputs.hex written before this change
+        // is byte-identical under it and every frozen expectation derived
+        // from one still holds. A file that says nothing about P2 leaves
+        // joystick2 at 0x3ff, i.e. fully released, exactly as before.
+        //
+        // NOTE: the _JTFRAME_JOY_* direction permutations below are applied
+        // to P1 only, as they always were. Cores using them would need the
+        // same treatment here; cps2/cps2w use the default order.
+        dut.joystick2    = 0x30f | ((v>>12)&0xf0);            // P2 buttons 1~4
+        dut.joystick2    = (dut.joystick2&~0xf) | ((v>>12)&0xf); // P2 directions
+        // ---------------------------------------------------------------
         v >>= 4;    // directions:
         // ~0xf, not 0xf0: keep EVERY button bit the port has. joystick1 is
         // [9:0] and active low, so masking to 8 bits asserts buttons 5 and 6.
