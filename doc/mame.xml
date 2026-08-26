@@ -147720,7 +147720,7 @@
 		<rom name="vm3j.07b" size="524288" crc="c0bff3a5" sha1="9d5ee1f730082023754f73b5f3302de93273064c" region="maincpu" offset="200000"/>
 		<rom name="vm3j.08a" size="524288" crc="5773e5c9" sha1="551afc5d921f9ef1fe928ca83d072b6a6105ab0e" region="maincpu" offset="280000"/>
 		<rom name="vm3j.09b" size="524288" crc="d064f8b9" sha1="09f77f7b466c147a5d894a4ec3b40bd068dfab26" region="maincpu" offset="300000"/>
-		<rom name="vm3j.10b" size="524288" crc="046da105" sha1="1531a851f13dee5227e9b828271d7bf98e1489e0" region="maincpu" offset="380000"/>
+		<rom name="vm3j.10b" size="524288" crc="156fd6a8" sha1="6f90322516a4a737f666f089d025e2e0d2979838" region="maincpu" offset="380000"/>
 		<rom name="vsw.41" size="524288" crc="b8845925" sha1="a4c009190907ee53b50c030b01e9777be896c8cc" region="maincpu" offset="400000"/>
 		<rom name="vsw.42" size="524288" crc="7ea74b1d" sha1="cc109e9f8320057de4c8715d4a203d8d7e1b2727" region="maincpu" offset="480000"/>
 		<rom name="vsw.43" size="524288" crc="504bf849" sha1="13a184ec9e176371808938015111f8918cb4df7d" region="maincpu" offset="500000"/>
