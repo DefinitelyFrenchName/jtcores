@@ -147713,16 +147713,16 @@
 		<description>Vampire Savior: The Lord of Vampire (Japan 970519, CPS-2 WIDE v1)</description>
 		<year>1997</year>
 		<manufacturer>Capcom</manufacturer>
-		<rom name="vm3j.03d" size="524288" crc="100b6ffb" sha1="737827974b476c983cd1d0fc14679c4eea09b3b7" region="maincpu" offset="0"/>
-		<rom name="vm3j.04d" size="524288" crc="20c40154" sha1="890f0edd9dd9d2613b35a210868dcebb512df924" region="maincpu" offset="80000"/>
+		<rom name="vm3j.03d" size="524288" crc="1ee5bb68" sha1="b25cf337be5030cddca3815ef04f8e45b627a3ed" region="maincpu" offset="0"/>
+		<rom name="vm3j.04d" size="524288" crc="5a98fea7" sha1="9930865c069de2b4ace35ddb10f20feb38b660b1" region="maincpu" offset="80000"/>
 		<rom name="vm3j.05a" size="524288" crc="95ce88d5" sha1="ba5e64c2551d97a71d2f4d7a78663aede4b722e8" region="maincpu" offset="100000"/>
 		<rom name="vm3j.06b" size="524288" crc="2c4297e0" sha1="3a7103456ba3937f63c28dd42020cac1955b5741" region="maincpu" offset="180000"/>
-		<rom name="vm3j.07b" size="524288" crc="0a4d6b7e" sha1="416c06fa18b32c529c6eb46e3be15b5e53e54a2a" region="maincpu" offset="200000"/>
+		<rom name="vm3j.07b" size="524288" crc="c0bff3a5" sha1="9d5ee1f730082023754f73b5f3302de93273064c" region="maincpu" offset="200000"/>
 		<rom name="vm3j.08a" size="524288" crc="5773e5c9" sha1="551afc5d921f9ef1fe928ca83d072b6a6105ab0e" region="maincpu" offset="280000"/>
 		<rom name="vm3j.09b" size="524288" crc="d064f8b9" sha1="09f77f7b466c147a5d894a4ec3b40bd068dfab26" region="maincpu" offset="300000"/>
-		<rom name="vm3j.10b" size="524288" crc="dffa4d2d" sha1="ee4901ef42bc9b2e2c74484b5d41a3c3ff9cca47" region="maincpu" offset="380000"/>
-		<rom name="vsw.41" size="524288" crc="8e54c74a" sha1="0bf5f8b07d63c73e2b88d324e1f5217ddbd9ba04" region="maincpu" offset="400000"/>
-		<rom name="vsw.42" size="524288" crc="5989d063" sha1="2d3b8d32a3608ef9b5c28b13d36945b1df91cf6a" region="maincpu" offset="480000"/>
+		<rom name="vm3j.10b" size="524288" crc="046da105" sha1="1531a851f13dee5227e9b828271d7bf98e1489e0" region="maincpu" offset="380000"/>
+		<rom name="vsw.41" size="524288" crc="b8845925" sha1="a4c009190907ee53b50c030b01e9777be896c8cc" region="maincpu" offset="400000"/>
+		<rom name="vsw.42" size="524288" crc="7ea74b1d" sha1="cc109e9f8320057de4c8715d4a203d8d7e1b2727" region="maincpu" offset="480000"/>
 		<rom name="vsw.43" size="524288" crc="504bf849" sha1="13a184ec9e176371808938015111f8918cb4df7d" region="maincpu" offset="500000"/>
 		<rom name="vsw.44" size="524288" crc="ceb1784e" sha1="739ad1d33c279d69588cfe8e184ce49ab150684c" region="maincpu" offset="580000"/>
 		<rom name="vm3.13m" merge="vm3.13m" size="4194304" crc="dd2551ff" sha1="969485a0d225d15e5d04b19c9fd12e609b56f712" region="gfx" offset="0"/>
