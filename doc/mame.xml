@@ -147710,7 +147710,7 @@
 		<driver status="good" emulation="good" savestate="supported"/>
 	</machine>
 <machine name="vsavjw" sourcefile="capcom/cps2w.cpp" cloneof="vsav" romof="vsav">
-		<description>Vampire Savior: The Lord of Vampire (Japan 970519, CPS-2 WIDE v1)</description>
+		<description>Vampire Saved - CPS-2 WIDE (Japan 970519)</description>
 		<year>1997</year>
 		<manufacturer>Capcom</manufacturer>
 		<rom name="vm3j.03d" size="524288" crc="2acc5d6d" sha1="c1f1e1c7ae017564c975a12da740ed983ad3a0ee" region="maincpu" offset="0"/>
