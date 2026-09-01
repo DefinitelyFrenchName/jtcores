@@ -13,6 +13,16 @@ sourcefile=[ "cps2.cpp", "cps2w.cpp" ]
 # jtcps2w: only the Vampire Savior family (vsav + clones, incl. vsavj) —
 # the stock reference leg of this core. The Vampire Saved set is added later.
 mustbe.machines=[ "vsav" ]
+# THE WIDE SET IS THE MAIN MRA, not an alternative. jtframe files a CLONE
+# under release/mra/_alternatives/<parent> unless its setname is listed here
+# (mame2mra.go is_main / dump_mra); vsavjw is a clone of vsav, so without this
+# the roster the core EXISTS FOR was buried one directory down while a stock
+# regional set took the main slot. That is backwards for a core whose purpose
+# is the roster, and it is what made the entry hard to find in the MiSTer
+# menu. Same mechanism kiwi / s16 / s16b already use. The stock legs stay in
+# _alternatives, which matches the "ship the WIDE MRA only" ruling
+# (maintainer, 2026-08-25).
+main_setnames=[ "vsavjw" ]
 parents= [
     {name="megaman", description="Megaman: The Power Battle"},
 ]
