@@ -147713,16 +147713,16 @@
 		<description>Vampire Saved - CPS-2 WIDE (Japan 970519)</description>
 		<year>1997</year>
 		<manufacturer>Capcom</manufacturer>
-		<rom name="vm3j.03d" size="524288" crc="e703652a" sha1="691efbf63d9c6225bfb0f0f0bd6871fef19b6c79" region="maincpu" offset="0"/>
-		<rom name="vm3j.04d" size="524288" crc="2b249a19" sha1="2bf5426f862d79f60a6646426abcddb899d0fd0a" region="maincpu" offset="80000"/>
+		<rom name="vm3j.03d" size="524288" crc="0dbc14a6" sha1="cc681144d7d368c26e4f2d69f6ba1d76b28c3b99" region="maincpu" offset="0"/>
+		<rom name="vm3j.04d" size="524288" crc="02aba291" sha1="cccecc09e746852d6bb81dc7f416c86dee81f852" region="maincpu" offset="80000"/>
 		<rom name="vm3j.05a" size="524288" crc="95ce88d5" sha1="ba5e64c2551d97a71d2f4d7a78663aede4b722e8" region="maincpu" offset="100000"/>
 		<rom name="vm3j.06b" size="524288" crc="2c4297e0" sha1="3a7103456ba3937f63c28dd42020cac1955b5741" region="maincpu" offset="180000"/>
-		<rom name="vm3j.07b" size="524288" crc="ceece3e8" sha1="629d627cc7ebff087f3955eec9a3b9f0e8d07a5a" region="maincpu" offset="200000"/>
+		<rom name="vm3j.07b" size="524288" crc="b845aef9" sha1="a688024e7a065a8c55f4fd8b695a33292a9a6d2f" region="maincpu" offset="200000"/>
 		<rom name="vm3j.08a" size="524288" crc="5773e5c9" sha1="551afc5d921f9ef1fe928ca83d072b6a6105ab0e" region="maincpu" offset="280000"/>
 		<rom name="vm3j.09b" size="524288" crc="d064f8b9" sha1="09f77f7b466c147a5d894a4ec3b40bd068dfab26" region="maincpu" offset="300000"/>
-		<rom name="vm3j.10b" size="524288" crc="c135afb8" sha1="4df053504e71ef4e3eee4e1336a181b8687c79c4" region="maincpu" offset="380000"/>
-		<rom name="vsw.41" size="524288" crc="c6fe6e5e" sha1="b35b174b2c9de461b3eb1788848adea75eed6722" region="maincpu" offset="400000"/>
-		<rom name="vsw.42" size="524288" crc="0ed42ee0" sha1="b3eb2c13a3ce24437fe545bb7f7971e5b973b296" region="maincpu" offset="480000"/>
+		<rom name="vm3j.10b" size="524288" crc="05cdacd0" sha1="3824f17955444773e1dcbe1e08f2a2a0ac04623e" region="maincpu" offset="380000"/>
+		<rom name="vsw.41" size="524288" crc="7102a42c" sha1="e9ac6f6d0409609f5c70ac7841334ca0f0572614" region="maincpu" offset="400000"/>
+		<rom name="vsw.42" size="524288" crc="7823ef8e" sha1="d9cd0366953c870248cedabf2dd1a2eecad81d2b" region="maincpu" offset="480000"/>
 		<rom name="vsw.43" size="524288" crc="504bf849" sha1="13a184ec9e176371808938015111f8918cb4df7d" region="maincpu" offset="500000"/>
 		<rom name="vsw.44" size="524288" crc="ceb1784e" sha1="739ad1d33c279d69588cfe8e184ce49ab150684c" region="maincpu" offset="580000"/>
 		<rom name="vm3.13m" merge="vm3.13m" size="4194304" crc="dd2551ff" sha1="969485a0d225d15e5d04b19c9fd12e609b56f712" region="gfx" offset="0"/>
@@ -147734,9 +147734,9 @@
 		<rom name="vm3.18m" merge="vm3.18m" size="4194304" crc="df9a9f47" sha1="ce29ff00cf4b6fdd9b3b1ed87823534f1d364eab" region="gfx" offset="1000004"/>
 		<rom name="vm3.20m" merge="vm3.20m" size="4194304" crc="c22fc3d9" sha1="df7538c05b03a4ad94d369f8083799979e6fac42" region="gfx" offset="1000006"/>
 		<rom name="vsw.31m" size="4194304" crc="d75f7a69" sha1="f448504e1f71fabbb6bbecd12628b8358f157ce9" region="gfx" offset="2000000"/>
-		<rom name="vsw.33m" size="4194304" crc="bcb4d72c" sha1="f373c60cdd76ceacc8d5920a5a5812b8b3bcec85" region="gfx" offset="2000002"/>
+		<rom name="vsw.33m" size="4194304" crc="6f5a1c98" sha1="239c552360b9ca908907fbecd15c0db3c39c3934" region="gfx" offset="2000002"/>
 		<rom name="vsw.35m" size="4194304" crc="4eae3882" sha1="dbe0276c8c8427d5c90eab1d0130674ed3728aa6" region="gfx" offset="2000004"/>
-		<rom name="vsw.37m" size="4194304" crc="70df1050" sha1="829d97f1db2f93b453836b22b758f7b69e2c1b49" region="gfx" offset="2000006"/>
+		<rom name="vsw.37m" size="4194304" crc="60b51461" sha1="87001856aa6b9e511b757673122f491dd6243e0c" region="gfx" offset="2000006"/>
 		<rom name="vsw.z01" size="131072" crc="153600b9" sha1="255e3523b5fc49b63d420c04547a69784eb5171f" region="audiocpu" offset="0"/>
 		<rom name="vsw.z02" size="131072" crc="26b6ecc5" sha1="9f113542d7bc75de01d62743af489e8ccc0559d8" region="audiocpu" offset="28000"/>
 		<rom name="vm3.11m" merge="vm3.11m" size="4194304" crc="e80e956e" sha1="74181fca4b764fb3c56ceef2cb4c6fd6c18ec4b6" region="qsound" offset="0"/>
