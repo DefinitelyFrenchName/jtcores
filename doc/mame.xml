@@ -147713,8 +147713,8 @@
 		<description>Vampire Saved - CPS-2 WIDE (Japan 970519)</description>
 		<year>1997</year>
 		<manufacturer>Capcom</manufacturer>
-		<rom name="vm3j.03d" size="524288" crc="09d90dbd" sha1="a440c11bf8dad5a6696fb40d7c9ca88919376ff6" region="maincpu" offset="0"/>
-		<rom name="vm3j.04d" size="524288" crc="b24a648b" sha1="090d1c9c3fbbd5749c92126155da9f4c667a765c" region="maincpu" offset="80000"/>
+		<rom name="vm3j.03d" size="524288" crc="51a90934" sha1="cde3f36d92fdf154fd792482f82aa5fdf2db8f79" region="maincpu" offset="0"/>
+		<rom name="vm3j.04d" size="524288" crc="ef5acffb" sha1="dc668d6f4956651fab7209c24ba3c283ebe3d958" region="maincpu" offset="80000"/>
 		<rom name="vm3j.05a" size="524288" crc="95ce88d5" sha1="ba5e64c2551d97a71d2f4d7a78663aede4b722e8" region="maincpu" offset="100000"/>
 		<rom name="vm3j.06b" size="524288" crc="2c4297e0" sha1="3a7103456ba3937f63c28dd42020cac1955b5741" region="maincpu" offset="180000"/>
 		<rom name="vm3j.07b" size="524288" crc="548977d5" sha1="4c28e6cc5432fd48c70539629f11359feae3a181" region="maincpu" offset="200000"/>
@@ -147734,9 +147734,9 @@
 		<rom name="vm3.18m" merge="vm3.18m" size="4194304" crc="df9a9f47" sha1="ce29ff00cf4b6fdd9b3b1ed87823534f1d364eab" region="gfx" offset="1000004"/>
 		<rom name="vm3.20m" merge="vm3.20m" size="4194304" crc="c22fc3d9" sha1="df7538c05b03a4ad94d369f8083799979e6fac42" region="gfx" offset="1000006"/>
 		<rom name="vsw.31m" size="4194304" crc="d75f7a69" sha1="f448504e1f71fabbb6bbecd12628b8358f157ce9" region="gfx" offset="2000000"/>
-		<rom name="vsw.33m" size="4194304" crc="ee1148dd" sha1="5224f72d6778e51e12c85f5d0e6583d6e04381c4" region="gfx" offset="2000002"/>
+		<rom name="vsw.33m" size="4194304" crc="cd4c6970" sha1="f4f2a04c9fca7c8f200a91c4276dd36cff4bd8ec" region="gfx" offset="2000002"/>
 		<rom name="vsw.35m" size="4194304" crc="4eae3882" sha1="dbe0276c8c8427d5c90eab1d0130674ed3728aa6" region="gfx" offset="2000004"/>
-		<rom name="vsw.37m" size="4194304" crc="11ff7862" sha1="1b19b68d8400a3ae6fbe82143b2610c5047fcf42" region="gfx" offset="2000006"/>
+		<rom name="vsw.37m" size="4194304" crc="9a136ffb" sha1="f1e73fc3f4073853b5bfcf5fcb0f77a1e97b4953" region="gfx" offset="2000006"/>
 		<rom name="vsw.z01" size="131072" crc="153600b9" sha1="255e3523b5fc49b63d420c04547a69784eb5171f" region="audiocpu" offset="0"/>
 		<rom name="vsw.z02" size="131072" crc="26b6ecc5" sha1="9f113542d7bc75de01d62743af489e8ccc0559d8" region="audiocpu" offset="28000"/>
 		<rom name="vm3.11m" merge="vm3.11m" size="4194304" crc="e80e956e" sha1="74181fca4b764fb3c56ceef2cb4c6fd6c18ec4b6" region="qsound" offset="0"/>
